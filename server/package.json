@@ -1,0 +1,16 @@
+{
+  "name": "four-colors-multiplayer-server",
+  "version": "1.0.0",
+  "description": "Scalable Multiplayer Server for Four Colors Game (1M CCU Architecture)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "@socket.io/redis-adapter": "^8.2.1",
+    "redis": "^4.6.8",
+    "cors": "^2.8.5"
+  }
+}
