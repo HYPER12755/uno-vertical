@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  
+  <defs>
+    <linearGradient id="svg_wild_wildcolorroulette__bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a12" />
+      <stop offset="50%" stop-color="#1a1a26" />
+      <stop offset="100%" stop-color="#0a0a12" />
+    </linearGradient>
+
+    <linearGradient id="svg_wild_wildcolorroulette__oval" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#222233" />
+      <stop offset="100%" stop-color="#101018" />
+    </linearGradient>
+
+    <radialGradient id="svg_wild_wildcolorroulette__wildbg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2e2e42" />
+      <stop offset="100%" stop-color="#0a0a10" />
+    </radialGradient>
+
+    <linearGradient id="svg_wild_wildcolorroulette__gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff9c4" />
+      <stop offset="50%" stop-color="#fbc02d" />
+      <stop offset="100%" stop-color="#f57f17" />
+    </linearGradient>
+
+    <linearGradient id="svg_wild_wildcolorroulette__flame" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff0055" />
+      <stop offset="50%" stop-color="#ff6600" />
+      <stop offset="100%" stop-color="#ffcc00" />
+    </linearGradient>
+
+    <linearGradient id="svg_wild_wildcolorroulette__ice" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f7fa" />
+      <stop offset="50%" stop-color="#80deea" />
+      <stop offset="100%" stop-color="#00acc1" />
+    </linearGradient>
+
+    <filter id="svg_wild_wildcolorroulette__glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="svg_wild_wildcolorroulette__shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+  </defs>
+  
+  
+    <!-- Card Outer Boundary & Frame -->
+    <rect x="2" y="2" width="196" height="296" rx="16" ry="16" fill="url(#svg_wild_wildcolorroulette__bg)" stroke="#ff007f" stroke-width="3.5" />
+    <rect x="7" y="7" width="186" height="286" rx="12" ry="12" fill="none" stroke="#00f0ff" stroke-width="1.2" stroke-opacity="0.4" />
+    <rect x="11" y="11" width="178" height="278" rx="9" ry="9" fill="none" stroke="#ff007f" stroke-width="1" stroke-opacity="0.25" />
+  
+  
+      <ellipse cx="100" cy="150" rx="72" ry="105" transform="rotate(-28 100 150)" fill="url(#svg_wild_wildcolorroulette__wildbg)" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35" filter="url(#svg_wild_wildcolorroulette__shadow)" />
+    
+  
+    <!-- Top-Left Corner Pip -->
+    <text x="14" y="32" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="20" text-anchor="left" fill="#ffea00" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.85))">🎰</text>
+    <!-- Bottom-Right Corner Pip (Rotated 180) -->
+    <g transform="translate(186, 268) rotate(180)">
+      <text x="0" y="0" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="20" text-anchor="left" fill="#ffea00" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.85))">🎰</text>
+    </g>
+  
+  
+      <g filter="url(#svg_wild_wildcolorroulette__shadow)">
+        <g transform="translate(100, 135)">
+          <path d="M 0 0 L 0 -45 A 45 45 0 0 1 45 0 Z" fill="#ff2d55" stroke="#ffffff" stroke-width="1.5" />
+          <path d="M 0 0 L 45 0 A 45 45 0 0 1 0 45 Z" fill="#ffcc00" stroke="#ffffff" stroke-width="1.5" />
+          <path d="M 0 0 L 0 45 A 45 45 0 0 1 -45 0 Z" fill="#34c759" stroke="#ffffff" stroke-width="1.5" />
+          <path d="M 0 0 L -45 0 A 45 45 0 0 1 0 -45 Z" fill="#007aff" stroke="#ffffff" stroke-width="1.5" />
+          <circle cx="0" cy="0" r="14" fill="url(#svg_wild_wildcolorroulette__gold)" stroke="#222" stroke-width="2" />
+          <circle cx="0" cy="0" r="5" fill="#ffffff" />
+        </g>
+        <rect x="22" y="190" width="156" height="24" rx="6" fill="#212121" stroke="#fbc02d" stroke-width="1.5" />
+        <text x="100" y="207" font-family="'Arial Black', sans-serif" font-weight="900" font-size="10.5" text-anchor="middle" fill="#ffee58" letter-spacing="0.5">🎰 COLOR ROULETTE</text>
+      </g>
+    
+</svg>

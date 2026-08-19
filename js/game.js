@@ -115,19 +115,19 @@ var cards_arr = {
 	numbers:[0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9],
 	actions:[
 		{type:'draw2', point:20, image:'assets/icon_draw2.png', text:'DRAW 2 CARDS'},
-		{type:'draw4', point:20, image:'', text:'DRAW 4 CARDS'},
-		{type:'discardall', point:30, image:'', text:'DISCARD ALL COLOR'},
-		{type:'skipeveryone', point:30, image:'', text:'SKIP EVERYONE'},
+		{type:'draw4', point:20, image:'assets/svg/card_red_draw4.svg', text:'DRAW 4 CARDS'},
+		{type:'discardall', point:30, image:'assets/svg/card_red_discardall.svg', text:'DISCARD ALL COLOR'},
+		{type:'skipeveryone', point:30, image:'assets/svg/card_red_skipeveryone.svg', text:'SKIP EVERYONE'},
 		{type:'reverse', point:20, image:'assets/icon_reverse.png', text:'REVERSE TURN'},
 		{type:'skip', point:20, image:'assets/icon_skip.png', text:'SKIP TURN'},
 	],
 	wilds:[
 		{type:'wild', point:50, image:'assets/icon_wild.png', text:'WILD CARD'},
 		{type:'wilddraw4', point:50, image:'assets/icon_wilddraw4.png', text:'DRAW 4 CARDS'},
-		{type:'wilddraw6', point:50, image:'', text:'WILD DRAW 6'},
-		{type:'wilddraw10', point:50, image:'', text:'WILD DRAW 10 (NO MERCY)'},
-		{type:'wildreversdraw4', point:50, image:'', text:'WILD REVERSE DRAW 4'},
-		{type:'wildcolorroulette', point:50, image:'', text:'WILD COLOR ROULETTE'},
+		{type:'wilddraw6', point:50, image:'assets/svg/card_wilddraw6.svg', text:'WILD DRAW 6'},
+		{type:'wilddraw10', point:50, image:'assets/svg/card_wilddraw10.svg', text:'WILD DRAW 10 (NO MERCY)'},
+		{type:'wildreversdraw4', point:50, image:'assets/svg/card_wildreversdraw4.svg', text:'WILD REVERSE DRAW 4'},
+		{type:'wildcolorroulette', point:50, image:'assets/svg/card_wildcolorroulette.svg', text:'WILD COLOR ROULETTE'},
 	],
 	specials:[
 		{type:'truesight', point:50, image:'assets/icon_truesight.png', text:'REVEAL PLAYER CARDS'},
@@ -141,52 +141,55 @@ var cards_arr = {
 	otherActions:[]
 };
 
-// --- UNO SHOW 'EM NO MERCY PROCEDURAL GRAPHICS GENERATOR ---
+// --- MODE DETECTION AND ISOLATION SYSTEM ---
 var noMercyCardCache = {};
 
+function getActiveGameMode(){
+	if (typeof gameData !== 'undefined' && gameData && gameData.mode) return String(gameData.mode).toLowerCase();
+	if (typeof gameData !== 'undefined' && gameData && gameData.fourcolors && gameData.fourcolors.mode) return String(gameData.fourcolors.mode).toLowerCase();
+	if (typeof window !== 'undefined' && window.socketData && window.socketData.mode) return String(window.socketData.mode).toLowerCase();
+	if (typeof socketData !== 'undefined' && socketData && socketData.mode) return String(socketData.mode).toLowerCase();
+	return 'classic';
+}
+window.getActiveGameMode = getActiveGameMode;
+
 function isNoMercyMode(){
-	if (gameData && gameData.mode === 'nomercy') return true;
-	if (gameData && gameData.fourcolors && gameData.fourcolors.mode === 'nomercy') return true;
-	if (typeof window !== 'undefined' && window.socketData && window.socketData.mode === 'nomercy') return true;
-	return false;
+	return getActiveGameMode() === 'nomercy';
 }
 window.isNoMercyMode = isNoMercyMode;
 
 function isFlipMode(){
-	if (typeof gameData !== 'undefined' && gameData && gameData.mode === 'flip') return true;
-	if (typeof gameData !== 'undefined' && gameData && gameData.fourcolors && (gameData.fourcolors.mode === 'flip' || gameData.fourcolors.flip)) return true;
-	if (typeof socketData !== 'undefined' && socketData && socketData.mode === 'flip') return true;
-	if (typeof window !== 'undefined' && window.socketData && window.socketData.mode === 'flip') return true;
-	return false;
+	return getActiveGameMode() === 'flip';
 }
 window.isFlipMode = isFlipMode;
 
 function isFlexMode(){
-	if (typeof gameData !== 'undefined' && gameData && gameData.mode === 'flex') return true;
-	if (typeof gameData !== 'undefined' && gameData && gameData.fourcolors && (gameData.fourcolors.mode === 'flex' || gameData.fourcolors.flex)) return true;
-	if (typeof socketData !== 'undefined' && socketData && socketData.mode === 'flex') return true;
-	if (typeof window !== 'undefined' && window.socketData && window.socketData.mode === 'flex') return true;
-	return false;
+	return getActiveGameMode() === 'flex';
 }
 window.isFlexMode = isFlexMode;
 
 function isAttackMode(){
-	if (typeof gameData !== 'undefined' && gameData && (gameData.mode === 'attack' || gameData.mode === 'extreme')) return true;
-	if (typeof gameData !== 'undefined' && gameData && gameData.fourcolors && (gameData.fourcolors.mode === 'attack' || gameData.fourcolors.attack)) return true;
-	if (typeof socketData !== 'undefined' && socketData && (socketData.mode === 'attack' || socketData.mode === 'extreme')) return true;
-	if (typeof window !== 'undefined' && window.socketData && (window.socketData.mode === 'attack' || window.socketData.mode === 'extreme')) return true;
-	return false;
+	var m = getActiveGameMode();
+	return m === 'attack' || m === 'extreme';
 }
 window.isAttackMode = isAttackMode;
 
 function isAllWildMode(){
-	if (typeof gameData !== 'undefined' && gameData && (gameData.mode === 'allwild' || gameData.mode === 'wild')) return true;
-	if (typeof gameData !== 'undefined' && gameData && gameData.fourcolors && (gameData.fourcolors.mode === 'allwild' || gameData.fourcolors.allwild)) return true;
-	if (typeof socketData !== 'undefined' && socketData && (socketData.mode === 'allwild' || socketData.mode === 'wild')) return true;
-	if (typeof window !== 'undefined' && window.socketData && window.socketData.mode === 'allwild' || window.socketData.mode === 'wild') return true;
-	return false;
+	var m = getActiveGameMode();
+	return m === 'allwild' || m === 'wild';
 }
 window.isAllWildMode = isAllWildMode;
+
+function isSpecialMode(){
+	return getActiveGameMode() === 'special';
+}
+window.isSpecialMode = isSpecialMode;
+
+function isClassicMode(){
+	var m = getActiveGameMode();
+	return m === 'classic' || (!isNoMercyMode() && !isFlipMode() && !isFlexMode() && !isAttackMode() && !isAllWildMode() && !isSpecialMode());
+}
+window.isClassicMode = isClassicMode;
 
 function getNoMercyCardCanvas(cardType, cardColor, cardValue, themeIndex) {
 	var key = cardType + '_' + (cardColor || 'wild') + '_' + (cardValue !== undefined ? cardValue : '') + '_' + (themeIndex || 0);
@@ -194,297 +197,16 @@ function getNoMercyCardCanvas(cardType, cardColor, cardValue, themeIndex) {
 		return noMercyCardCache[key];
 	}
 
+	if (typeof SVGCards !== 'undefined' && SVGCards.getCardCanvas) {
+		var c = SVGCards.getCardCanvas(cardType, cardColor, cardValue);
+		noMercyCardCache[key] = c;
+		return c;
+	}
+
 	var canvas = document.createElement('canvas');
 	canvas.width = 200;
 	canvas.height = 300;
-	var ctx = canvas.getContext('2d');
-
-	if (typeof SVGCards !== 'undefined') {
-		var svgImg = new Image();
-		svgImg.src = SVGCards.getSVGDataURL(cardColor || 'wild', cardType, cardValue);
-		svgImg.onload = function() {
-			ctx.clearRect(0, 0, 200, 300);
-			ctx.drawImage(svgImg, 0, 0, 200, 300);
-			if (typeof stage !== 'undefined' && stage.update) {
-				stage.update();
-			}
-		};
-	}
-
-	var colorMap = {
-		red: { bg: '#d63031', grad: '#ff7675', dark: '#b71540' },
-		blue: { bg: '#0984e3', grad: '#74b9ff', dark: '#0c2461' },
-		yellow: { bg: '#f1c40f', grad: '#ffeaa7', dark: '#e58e26' },
-		green: { bg: '#27ae60', grad: '#55efc4', dark: '#079992' },
-		pink: { bg: '#ff2a85', grad: '#ff70a6', dark: '#990045' },
-		teal: { bg: '#00f0ff', grad: '#80f8ff', dark: '#008b99' },
-		orange: { bg: '#ff7700', grad: '#ffa64d', dark: '#b34700' },
-		purple: { bg: '#9d4edd', grad: '#c77dff', dark: '#5a189a' },
-		wild: { bg: '#1e272e', grad: '#485460', dark: '#000000' },
-		darkwild: { bg: '#08080c', grad: '#181824', dark: '#000000' }
-	};
-
-	var cTheme = colorMap[cardColor] || colorMap.wild;
-	var isWild = !cardColor || cardColor === '' || cardColor === 'wild';
-
-	// 1. Base card rounded rectangle
-	ctx.save();
-	ctx.beginPath();
-	if (ctx.roundRect) {
-		ctx.roundRect(4, 4, 192, 292, 16);
-	} else {
-		ctx.rect(4, 4, 192, 292);
-	}
-	ctx.clip();
-
-	// Background
-	var bgGrad = ctx.createLinearGradient(0, 0, 200, 300);
-	if (isWild) {
-		bgGrad.addColorStop(0, '#111111');
-		bgGrad.addColorStop(0.5, '#222f3e');
-		bgGrad.addColorStop(1, '#0a0a0a');
-	} else {
-		bgGrad.addColorStop(0, cTheme.grad);
-		bgGrad.addColorStop(0.5, cTheme.bg);
-		bgGrad.addColorStop(1, cTheme.dark);
-	}
-	ctx.fillStyle = bgGrad;
-	ctx.fillRect(0, 0, 200, 300);
-
-	// Card Border
-	if (isWild) {
-		var rimGrad = ctx.createLinearGradient(0, 0, 200, 0);
-		rimGrad.addColorStop(0, '#e74c3c');
-		rimGrad.addColorStop(0.33, '#f1c40f');
-		rimGrad.addColorStop(0.66, '#2ecc71');
-		rimGrad.addColorStop(1, '#3498db');
-		ctx.lineWidth = 6;
-		ctx.strokeStyle = rimGrad;
-		ctx.strokeRect(6, 6, 188, 288);
-	} else {
-		ctx.lineWidth = 5;
-		ctx.strokeStyle = 'rgba(255,255,255,0.85)';
-		ctx.strokeRect(6, 6, 188, 288);
-	}
-
-	// 2. Central Oval
-	ctx.save();
-	ctx.translate(100, 150);
-	ctx.rotate(-22 * Math.PI / 180);
-	ctx.beginPath();
-	if (ctx.ellipse) {
-		ctx.ellipse(0, 0, 68, 105, 0, 0, 2 * Math.PI);
-	} else {
-		ctx.arc(0, 0, 68, 0, 2 * Math.PI);
-	}
-	if (isWild) {
-		var ovalGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 80);
-		ovalGrad.addColorStop(0, '#2d3436');
-		ovalGrad.addColorStop(1, '#000000');
-		ctx.fillStyle = ovalGrad;
-	} else {
-		ctx.fillStyle = '#ffffff';
-	}
-	ctx.fill();
-	ctx.lineWidth = 4;
-	ctx.strokeStyle = isWild ? '#e74c3c' : 'rgba(0,0,0,0.15)';
-	ctx.stroke();
-	ctx.restore();
-
-	// 3. Central Icon / Typography & Corner Numerals
-	ctx.textAlign = 'center';
-	ctx.textBaseline = 'middle';
-
-	if (cardType === 'wilddraw10') {
-		ctx.font = '900 64px "Arial Black", Impact, sans-serif';
-		ctx.fillStyle = '#ffffff';
-		ctx.shadowColor = '#e74c3c';
-		ctx.shadowBlur = 15;
-		ctx.fillText('+10', 100, 142);
-		ctx.shadowBlur = 0;
-		ctx.lineWidth = 4;
-		ctx.strokeStyle = '#c0392b';
-		ctx.strokeText('+10', 100, 142);
-
-		ctx.font = 'bold 12px "Arial Black", sans-serif';
-		ctx.fillStyle = '#ff7675';
-		ctx.fillText('💥 NO MERCY', 100, 195);
-
-		drawCorners(ctx, '+10', '#ffffff', 20);
-	} else if (cardType === 'wilddraw6') {
-		ctx.font = '900 74px "Arial Black", Impact, sans-serif';
-		ctx.fillStyle = '#ffffff';
-		ctx.shadowColor = '#e67e22';
-		ctx.shadowBlur = 12;
-		ctx.fillText('+6', 100, 142);
-		ctx.shadowBlur = 0;
-		ctx.lineWidth = 4;
-		ctx.strokeStyle = '#d35400';
-		ctx.strokeText('+6', 100, 142);
-
-		ctx.font = 'bold 12px "Arial Black", sans-serif';
-		ctx.fillStyle = '#f39c12';
-		ctx.fillText('DRAW 6', 100, 195);
-
-		drawCorners(ctx, '+6', '#ffffff', 22);
-	} else if (cardType === 'wildreversdraw4') {
-		ctx.font = '900 44px "Arial Black", Impact, sans-serif';
-		ctx.fillStyle = '#ffffff';
-		ctx.shadowColor = '#9b59b6';
-		ctx.shadowBlur = 10;
-		ctx.fillText('⇄ +4', 100, 140);
-		ctx.shadowBlur = 0;
-		ctx.lineWidth = 3;
-		ctx.strokeStyle = '#8e44ad';
-		ctx.strokeText('⇄ +4', 100, 140);
-
-		ctx.font = 'bold 11px "Arial Black", sans-serif';
-		ctx.fillStyle = '#a29bfe';
-		ctx.fillText('REV DRAW 4', 100, 190);
-
-		drawCorners(ctx, '⇄4', '#ffffff', 18);
-	} else if (cardType === 'wildcolorroulette') {
-		drawRouletteWheel(ctx, 100, 138, 46);
-
-		ctx.font = 'bold 12px "Arial Black", sans-serif';
-		ctx.fillStyle = '#f1c40f';
-		ctx.fillText('🎰 ROULETTE', 100, 202);
-
-		drawCorners(ctx, '🎰', '#ffffff', 20);
-	} else if (cardType === 'wild') {
-		drawWildOval(ctx, 100, 145, 42);
-		drawCorners(ctx, '★', '#ffffff', 22);
-	} else if (cardType === 'draw4') {
-		ctx.font = '900 76px "Arial Black", Impact, sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('+4', 100, 145);
-		ctx.lineWidth = 3;
-		ctx.strokeStyle = '#ffffff';
-		ctx.strokeText('+4', 100, 145);
-
-		drawCorners(ctx, '+4', '#ffffff', 24);
-	} else if (cardType === 'draw2') {
-		ctx.font = '900 78px "Arial Black", Impact, sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('+2', 100, 145);
-		ctx.lineWidth = 3;
-		ctx.strokeStyle = '#ffffff';
-		ctx.strokeText('+2', 100, 145);
-
-		drawCorners(ctx, '+2', '#ffffff', 24);
-	} else if (cardType === 'skipeveryone') {
-		ctx.font = 'bold 36px "Arial Black", sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('🚫🚫', 100, 130);
-		ctx.font = 'bold 13px "Arial Black", sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('SKIP ALL', 100, 168);
-
-		drawCorners(ctx, '🚫🚫', '#ffffff', 16);
-	} else if (cardType === 'discardall') {
-		ctx.font = '900 32px "Arial Black", sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('DUMP', 100, 135);
-		ctx.font = 'bold 12px "Arial Black", sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('DISCARD ALL', 100, 168);
-
-		drawCorners(ctx, '⬇️', '#ffffff', 20);
-	} else if (cardType === 'skip') {
-		ctx.font = 'bold 64px "Arial Black", sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('⊘', 100, 145);
-		drawCorners(ctx, '⊘', '#ffffff', 24);
-	} else if (cardType === 'reverse') {
-		ctx.font = 'bold 64px "Arial Black", sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText('⇄', 100, 145);
-		drawCorners(ctx, '⇄', '#ffffff', 24);
-	} else if (cardType === 'number') {
-		var numStr = String(cardValue !== undefined ? cardValue : 0);
-		ctx.font = '900 84px "Arial Black", Impact, sans-serif';
-		ctx.fillStyle = cTheme.bg;
-		ctx.fillText(numStr, 100, 145);
-		ctx.lineWidth = 2;
-		ctx.strokeStyle = '#ffffff';
-		ctx.strokeText(numStr, 100, 145);
-
-		if (cardValue === 7 && isNoMercyMode()) {
-			ctx.font = 'bold 12px "Arial Black", sans-serif';
-			ctx.fillStyle = cTheme.bg;
-			ctx.fillText('🔀 SWAP', 100, 192);
-		} else if (cardValue === 0 && isNoMercyMode()) {
-			ctx.font = 'bold 12px "Arial Black", sans-serif';
-			ctx.fillStyle = cTheme.bg;
-			ctx.fillText('🔁 PASS', 100, 192);
-		}
-
-		drawCorners(ctx, numStr, '#ffffff', 24);
-	}
-
-	ctx.restore();
-	noMercyCardCache[key] = canvas;
 	return canvas;
-}
-
-function drawCorners(ctx, text, color, fontSize) {
-	ctx.save();
-	ctx.font = '900 ' + fontSize + 'px "Arial Black", Impact, sans-serif';
-	ctx.fillStyle = color;
-	ctx.textAlign = 'left';
-	ctx.textBaseline = 'top';
-	ctx.fillText(text, 12, 12);
-
-	ctx.save();
-	ctx.translate(188, 288);
-	ctx.rotate(Math.PI);
-	ctx.fillText(text, 0, 0);
-	ctx.restore();
-
-	ctx.restore();
-}
-
-function drawRouletteWheel(ctx, x, y, radius) {
-	var colors = ['#e74c3c', '#f1c40f', '#27ae60', '#0984e3'];
-	for (var i = 0; i < 4; i++) {
-		ctx.beginPath();
-		ctx.moveTo(x, y);
-		ctx.arc(x, y, radius, i * Math.PI / 2, (i + 1) * Math.PI / 2);
-		ctx.closePath();
-		ctx.fillStyle = colors[i];
-		ctx.fill();
-		ctx.lineWidth = 2;
-		ctx.strokeStyle = '#ffffff';
-		ctx.stroke();
-	}
-	ctx.beginPath();
-	ctx.arc(x, y, 10, 0, 2 * Math.PI);
-	ctx.fillStyle = '#ffffff';
-	ctx.fill();
-	ctx.lineWidth = 2;
-	ctx.strokeStyle = '#2d3436';
-	ctx.stroke();
-}
-
-function drawWildOval(ctx, x, y, radius) {
-	var colors = ['#e74c3c', '#0984e3', '#f1c40f', '#27ae60'];
-	for (var i = 0; i < 4; i++) {
-		ctx.beginPath();
-		ctx.moveTo(x, y);
-		ctx.arc(x, y, radius, i * Math.PI / 2, (i + 1) * Math.PI / 2);
-		ctx.closePath();
-		ctx.fillStyle = colors[i];
-		ctx.fill();
-	}
-	ctx.beginPath();
-	ctx.arc(x, y, 14, 0, 2 * Math.PI);
-	ctx.fillStyle = '#111111';
-	ctx.fill();
-	ctx.font = 'bold 9px "Arial Black", sans-serif';
-	ctx.fillStyle = '#ffffff';
-	ctx.textAlign = 'center';
-	ctx.textBaseline = 'middle';
-	ctx.fillText('WILD', x, y);
 }
 
 function getDrawValueOfCard(cardType) {
@@ -753,32 +475,90 @@ function startWildDrawColor(targetPlayer, targetColor) {
 }
 
 function forceAllOtherPlayersDraw(sourcePlayer, drawAmount) {
+	var targetPlayers = [];
 	for(var p = 0; p < gameData.players; p++){
 		if(p !== sourcePlayer && $.players[p] && $.players[p].active){
-			for(var d = 0; d < drawAmount; d++){
-				if(gameData.draw.length === 0){
-					recycleDiscardPile();
-				}
-				if(gameData.draw.length > 0){
-					var cardIdx = gameData.draw[0];
-					gameData.draw.splice(0, 1);
-					$.players[p].cards.push(cardIdx);
-					var cObj = $.cards[cardIdx];
-					if(cObj){
-						cObj.cardDeal = true;
-						if(checkIsPlayer(p)){
-							flipCard(cObj);
-							toggleCardAction(cObj, true);
-						}else{
-							flipCardCover(cObj);
-							toggleCardAction(cObj, false);
-						}
-					}
-				}
-			}
-			positionPlayerCards(p, true);
+			targetPlayers.push(p);
 		}
 	}
+
+	if(targetPlayers.length === 0){
+		checkRoundEnd();
+		return;
+	}
+
+	gameData.turn.animating = true;
+	gameData.turn.action = false;
+
+	var dealQueue = [];
+	for(var d = 0; d < drawAmount; d++){
+		for(var t = 0; t < targetPlayers.length; t++){
+			dealQueue.push(targetPlayers[t]);
+		}
+	}
+
+	var stepIndex = 0;
+	function stepNextMultiDeal(){
+		if(stepIndex >= dealQueue.length){
+			gameData.turn.animating = false;
+			TweenMax.delayedCall(0.4, function(){
+				checkRoundEnd();
+			});
+			return;
+		}
+
+		if(gameData.draw.length === 0){
+			recycleDiscardPile();
+		}
+
+		if(gameData.draw.length === 0){
+			gameData.turn.animating = false;
+			checkRoundEnd();
+			return;
+		}
+
+		var targetP = dealQueue[stepIndex];
+		stepIndex++;
+
+		var cardIdx = gameData.draw[0];
+		gameData.draw.splice(0, 1);
+		showDrawCard(false);
+
+		$.players[targetP].cards.push(cardIdx);
+		var cObj = $.cards[cardIdx];
+		if(cObj){
+			cObj.cardDeal = true;
+			cObj.x = -(gameSettings.cardW / 2);
+			cObj.y = 0;
+			
+			var initRot = 0;
+			if($.players[targetP].dir == 'bottom') initRot = 0;
+			else if($.players[targetP].dir == 'top') initRot = 180;
+			else if($.players[targetP].dir == 'left') initRot = 90;
+			else if($.players[targetP].dir == 'right') initRot = -90;
+			cObj.rotation = initRot;
+			
+			cObj.scaleX = 1;
+			cObj.scaleY = 1;
+
+			var isHuman = checkIsPlayer(targetP);
+			if(isHuman){
+				flipCard(cObj);
+				toggleCardAction(cObj, true);
+			}else{
+				flipCardCover(cObj);
+				toggleCardAction(cObj, false);
+			}
+			setCardDepth(cObj);
+			playSound('soundCardDeal');
+			positionPlayerCards(targetP, true);
+		}
+
+		checkMercyElimination(targetP);
+		TweenMax.delayedCall(0.18, stepNextMultiDeal);
+	}
+
+	TweenMax.delayedCall(0.25, stepNextMultiDeal);
 }
 
 function triggerAttackLauncher(targetPlayer, numPresses) {
@@ -786,6 +566,9 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 		checkRoundEnd();
 		return;
 	}
+
+	gameData.turn.animating = true;
+	gameData.turn.action = false;
 
 	numPresses = numPresses || 1;
 	var pName = $.players["stats" + targetPlayer] ? $.players["stats" + targetPlayer].playerName.text : "Player " + (targetPlayer + 1);
@@ -820,6 +603,7 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 			}
 			TweenMax.delayedCall(1.2, function() {
 				gameData.turn.loseTurn = true;
+				gameData.turn.animating = false;
 				checkRoundEnd();
 			});
 			return;
@@ -840,6 +624,24 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 			var cardObj = $.cards[cardIdx];
 			if (cardObj) {
 				cardObj.cardDeal = true;
+				cardObj.x = -(gameSettings.cardW / 2);
+				cardObj.y = 0;
+				
+				var initRot = 0;
+				if($.players[targetPlayer].dir == 'bottom') initRot = 0;
+				else if($.players[targetPlayer].dir == 'top') initRot = 180;
+				else if($.players[targetPlayer].dir == 'left') initRot = 90;
+				else if($.players[targetPlayer].dir == 'right') initRot = -90;
+				cardObj.rotation = initRot;
+				
+				cardObj.scaleX = 1;
+				cardObj.scaleY = 1;
+				if(cardObj.shadow){
+					cardObj.shadow.x = -(gameSettings.cardW / 2) + (gameSettings.cardShadowX || 5);
+					cardObj.shadow.y = 0 + (gameSettings.cardShadowY || 5);
+					cardObj.shadow.rotation = initRot;
+				}
+
 				var isHuman = checkIsPlayer(targetPlayer);
 				if (isHuman) {
 					flipCard(cardObj);
@@ -856,6 +658,7 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 			TweenMax.delayedCall(0.12, ejectStep);
 		} else {
 			gameData.turn.loseTurn = true;
+			gameData.turn.animating = false;
 			checkRoundEnd();
 		}
 	}
@@ -867,6 +670,7 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 			statusPlayerTxt.text = pName + " survived (0 cards)!";
 			TweenMax.delayedCall(1, function() {
 				gameData.turn.loseTurn = true;
+				gameData.turn.animating = false;
 				checkRoundEnd();
 			});
 		} else {
@@ -1363,7 +1167,7 @@ function toggleGameType(con){
 	gameData.mode = mKey;
 	if (gameData.fourcolors) {
 		gameData.fourcolors.mode = mKey;
-		gameData.fourcolors.special = (gameData.modeIndex !== 0);
+		gameData.fourcolors.special = (mKey === 'special');
 	}
 	if (typeof socketData !== 'undefined' && socketData) {
 		socketData.mode = mKey;
@@ -1761,6 +1565,7 @@ function startCards(){
 	toggleRoundScore(false);
 	toggleColors(false);
 
+	// Always rebuild cards for local matches or if cards are not present
 	if (!socketData.online || !gameData.cards || gameData.cards.length === 0 || !gameData.cards[0] || !gameData.cards[0].frontContainer) {
 		prepareCards();
 	}
@@ -2401,55 +2206,91 @@ function buildCards(){
 				}
 			}
 		}
-	} else {
-		for(var c=0; c<gameData.colors.length; c++){
-			//numbers
-			for(var n=0; n<cards_arr.numbers.length; n++){
-				var thisNumber = cards_arr.numbers[n];
-				var thisCard = createCard('cardNumbers'+gameData.themeIndex+'_'+gameData.colors[c]+'_'+thisNumber, gameData.colors[c]);
-				thisCard.cardType = 'number';
-				thisCard.cardColor = gameData.colors[c];
-				thisCard.cardValue = thisNumber;
-				thisCard.cardPoint = thisNumber;
-			}
+	} else if (isSpecialMode()) {
+		// SPECIAL / ACTION WILDS MODE: 112 Cards (108 Standard + 7 Special Wild Cards)
+		gameData.colors = ['red', 'blue', 'yellow', 'green'];
+		for (var c = 0; c < gameData.colors.length; c++) {
+			var color = gameData.colors[c];
+			// 0: 1 copy per color = 4 cards
+			createNoMercyCard('number', color, 0, 0);
 
-			for(var l=0; l<2; l++){
-				for(var n=0; n<cards_arr.actions.length; n++){
-					var thisCard = 
-					createCard('cardActions'+gameData.themeIndex+'_'+gameData.colors[c]+'_'+n, gameData.colors[c]);
-					thisCard.cardType = cards_arr.actions[n].type;
-					thisCard.cardColor = gameData.colors[c];
-					thisCard.cardValue = '';
-					thisCard.cardPoint = cards_arr.actions[n].point;
-					gameData.actionArr.push(cards_arr.actions[n].type);
+			// 1-9: 2 copies per number per color = 72 cards
+			for (var num = 1; num <= 9; num++) {
+				for (var k = 0; k < 2; k++) {
+					createNoMercyCard('number', color, num, num);
 				}
 			}
 
-			for(var n=0; n<cards_arr.wilds.length; n++){
-				var thisCard = createCard('cardWilds'+gameData.themeIndex+'_'+n, '');
-				thisCard.cardType = cards_arr.wilds[n].type;
-				thisCard.cardColor = '';
-				thisCard.cardValue = '';
-				thisCard.cardPoint = cards_arr.wilds[n].point;
-				gameData.wildArr.push(cards_arr.wilds[n].type);
-				gameData.excludeMatch.push(cards_arr.wilds[n].type);
-				if(cards_arr.wilds[n].type == "wilddraw4"){
-					gameData.excludeFirst.push(cards_arr.wilds[n].type);
-				}
+			// Color Actions: 2 Draw 2, 2 Skip, 2 Reverse per color = 24 cards
+			for (var k = 0; k < 2; k++) {
+				createNoMercyCard('draw2', color, '', 20);
+				gameData.actionArr.push('draw2');
+				createNoMercyCard('skip', color, '', 20);
+				gameData.actionArr.push('skip');
+				createNoMercyCard('reverse', color, '', 20);
+				gameData.actionArr.push('reverse');
 			}
 		}
-		
-		if(gameData.fourcolors.special){
-			for(var n=0; n<cards_arr.specials.length; n++){
-				var thisCard = createCard('cardSpecial'+gameData.themeIndex+'_'+n, '');
-				thisCard.cardType = cards_arr.specials[n].type;
-				thisCard.cardColor = '';
-				thisCard.cardValue = '';
-				thisCard.cardPoint = cards_arr.specials[n].point;
-				gameData.specialArr.push(cards_arr.specials[n].type);
-				gameData.excludeMatch.push(cards_arr.specials[n].type);
-				gameData.excludeFirst.push(cards_arr.specials[n].type);
+
+		// Standard Wilds: 4 Wild + 4 Wild Draw 4 = 8 cards
+		for (var k = 0; k < 4; k++) {
+			createNoMercyCard('wild', '', '', 50);
+			gameData.wildArr.push('wild');
+			gameData.excludeMatch.push('wild');
+
+			createNoMercyCard('wilddraw4', '', '', 50);
+			gameData.wildArr.push('wilddraw4');
+			gameData.excludeMatch.push('wilddraw4');
+			gameData.excludeFirst.push('wilddraw4');
+		}
+
+		// Special Wilds: 7 Special Action Wilds
+		var specials = [
+			'truesight', 'oneforme', 'devildeal', 'charity',
+			'targeteddraw2', 'eliminatedplayer', 'frozencolor'
+		];
+		for (var s = 0; s < specials.length; s++) {
+			createNoMercyCard(specials[s], '', '', 50);
+			gameData.specialArr.push(specials[s]);
+			gameData.excludeMatch.push(specials[s]);
+			gameData.excludeFirst.push(specials[s]);
+		}
+	} else {
+		// CLASSIC UNO MODE: Exactly 108 Standard Cards (No specials, no gimmicks)
+		gameData.colors = ['red', 'blue', 'yellow', 'green'];
+		for (var c = 0; c < gameData.colors.length; c++) {
+			var color = gameData.colors[c];
+			// 0: 1 copy per color = 4 cards
+			createNoMercyCard('number', color, 0, 0);
+
+			// 1-9: 2 copies per number per color = 72 cards
+			for (var num = 1; num <= 9; num++) {
+				for (var k = 0; k < 2; k++) {
+					createNoMercyCard('number', color, num, num);
+				}
 			}
+
+			// Color Actions: 2 Draw 2, 2 Skip, 2 Reverse per color = 24 cards
+			for (var k = 0; k < 2; k++) {
+				createNoMercyCard('draw2', color, '', 20);
+				gameData.actionArr.push('draw2');
+				createNoMercyCard('skip', color, '', 20);
+				gameData.actionArr.push('skip');
+				createNoMercyCard('reverse', color, '', 20);
+				gameData.actionArr.push('reverse');
+			}
+		}
+
+		// Wilds: 4 Wild + 4 Wild Draw 4 = 8 cards
+		for (var k = 0; k < 4; k++) {
+			createNoMercyCard('wild', '', '', 50);
+			gameData.wildArr.push('wild');
+			gameData.excludeMatch.push('wild');
+
+			createNoMercyCard('wilddraw4', '', '', 50);
+			gameData.wildArr.push('wilddraw4');
+			gameData.excludeMatch.push('wilddraw4');
+			gameData.excludeFirst.push('wilddraw4');
 		}
 	}
 
@@ -2457,6 +2298,7 @@ function buildCards(){
 	gameData.wildArr = removeDuplicates(gameData.wildArr);
 	gameData.specialArr = removeDuplicates(gameData.specialArr);
 	gameData.excludeMatch = removeDuplicates(gameData.excludeMatch);
+	gameData.excludeFirst = removeDuplicates(gameData.excludeFirst);
 }
 
 /*!
@@ -2746,6 +2588,7 @@ function highlightCard(card, con){
 }
 
 function discardPlayerCard(cardIndex, flip){
+	gameData.turn.animating = true;
 	gameData.turn.played = true;
 	gameData.match.count++;
 	var playerCardIndex = $.players[gameData.player].cards.indexOf(cardIndex);
@@ -2973,6 +2816,16 @@ function dealPlayerCard(){
 	thisCard.cardDeal = true;
 	setCardDepth(thisCard);
 
+	// Pre-set rotation so card doesn't spin wildly during the deal animation
+	var initRot = 0;
+	if($.players[thisPlayer].dir == 'bottom') initRot = 0;
+	else if($.players[thisPlayer].dir == 'top') initRot = 180;
+	else if($.players[thisPlayer].dir == 'left') initRot = 90;
+	else if($.players[thisPlayer].dir == 'right') initRot = -90;
+	thisCard.rotation = initRot;
+	thisCard.x = 0;
+	thisCard.y = 0;
+
 	var showCardContent = checkIsPlayer(thisPlayer);
 	if(showCardContent){
 		toggleCardAction(thisCard, true);
@@ -3007,23 +2860,25 @@ function dealPlayerCardComplete(index, card){
 }
 
 function getPlayerCardPosition(index){
+	if(!$.players[index]) return { horizontal: true, x: 0, y: 0, startX: 0, startY: 0, w: 0, h: 0, gap: 0, totalCards: 0, maxScroll: 0, viewW: 0 };
 	var horizontal = $.players[index].horizontal;
+	var dir = $.players[index].dir;
 	var pt = cardsPlayContainer.globalToLocal($.players[index].x, $.players[index].y);
-	var maxW = viewport.isLandscape ? 600 : Math.min(500, canvasW * 0.72);
-	var maxH = viewport.isLandscape ? 380 : Math.min(300, canvasH * 0.32);
+
 	var pos = {
 		horizontal: horizontal,
+		dir: dir,
 		x: 0,
 		y: 0,
 		startX: 0,
 		startY: 0,
 		w: 0,
 		h: 0,
-		maxW: maxW,
-		maxH: maxH,
 		gap: 0,
-		cardSpace: gameSettings.cardSpace || 45,
-		totalCards: 0
+		totalCards: 0,
+		maxScroll: 0,
+		scrollX: 0,
+		viewW: 0
 	};
 
 	for(var p=0; p<$.players[index].cards.length; p++){
@@ -3035,24 +2890,51 @@ function getPlayerCardPosition(index){
 
 	var cardCountForSpacing = Math.max(pos.totalCards - 1, 0);
 
-	if(pos.horizontal){
-		pos.w = cardCountForSpacing * pos.cardSpace;
-		pos.gap = pos.cardSpace;
+	if(dir === 'bottom'){
+		// Human player hand at bottom: slidable/scrollable with clear, comfortable spacing
+		var cardSpacing = viewport.isLandscape ? 56 : 48;
+		pos.gap = cardSpacing;
+		pos.w = cardCountForSpacing * cardSpacing;
 
-		if(cardCountForSpacing > 0 && pos.w > pos.maxW){
-			pos.w = pos.maxW;
-			pos.gap = pos.maxW / cardCountForSpacing;
+		var viewW = viewport.isLandscape ? Math.min(canvasW - 220, 820) : Math.min(canvasW - 40, 520);
+		pos.viewW = viewW;
+		pos.maxScroll = Math.max(0, pos.w - viewW);
+
+		if(typeof gameData.handScrollX !== 'number') gameData.handScrollX = 0;
+		if(gameData.handScrollX > pos.maxScroll) gameData.handScrollX = pos.maxScroll;
+		if(gameData.handScrollX < 0) gameData.handScrollX = 0;
+		pos.scrollX = gameData.handScrollX;
+
+		var visibleWidth = Math.min(pos.w, viewW);
+		pos.startX = pt.x - (visibleWidth / 2);
+		pos.x = pos.startX - pos.scrollX;
+		pos.y = pos.startY = pt.y;
+
+	}else if(dir === 'top'){
+		// Top opponent: tightly stacked horizontally (max width 240px, tight gap), just like left/right bots!
+		var topMaxW = viewport.isLandscape ? 240 : 200;
+		var topSpace = 20;
+		pos.w = cardCountForSpacing * topSpace;
+		pos.gap = topSpace;
+
+		if(cardCountForSpacing > 0 && pos.w > topMaxW){
+			pos.w = topMaxW;
+			pos.gap = topMaxW / cardCountForSpacing;
 		}
 
 		pos.x = pos.startX = pt.x - (pos.w / 2);
 		pos.y = pos.startY = pt.y;
-	}else{
-		pos.h = cardCountForSpacing * pos.cardSpace;
-		pos.gap = pos.cardSpace;
 
-		if(cardCountForSpacing > 0 && pos.h > pos.maxH){
-			pos.h = pos.maxH;
-			pos.gap = pos.maxH / cardCountForSpacing;
+	}else{
+		// Left and right opponents (vertical): tightly stacked vertically
+		var vertMaxH = viewport.isLandscape ? 260 : 220;
+		var vertSpace = 22;
+		pos.h = cardCountForSpacing * vertSpace;
+		pos.gap = vertSpace;
+
+		if(cardCountForSpacing > 0 && pos.h > vertMaxH){
+			pos.h = vertMaxH;
+			pos.gap = vertMaxH / cardCountForSpacing;
 		}
 
 		pos.x = pos.startX = pt.x;
@@ -4211,13 +4093,21 @@ function drawPlayerCard(turn){
 	var cardW = gameSettings.cardW;
 	thisCard.x = -(cardW / 2);
 	thisCard.y = 0;
-	thisCard.rotation = 0;
+	
+	// Pre-set rotation so card doesn't spin wildly during draw
+	var initRot = 0;
+	if($.players[thisPlayer].dir == 'bottom') initRot = 0;
+	else if($.players[thisPlayer].dir == 'top') initRot = 180;
+	else if($.players[thisPlayer].dir == 'left') initRot = 90;
+	else if($.players[thisPlayer].dir == 'right') initRot = -90;
+	thisCard.rotation = initRot;
+	
 	thisCard.scaleX = 1;
 	thisCard.scaleY = 1;
 	if(thisCard.shadow){
 		thisCard.shadow.x = -(cardW / 2) + (gameSettings.cardShadowX || 5);
 		thisCard.shadow.y = 0 + (gameSettings.cardShadowY || 5);
-		thisCard.shadow.rotation = 0;
+		thisCard.shadow.rotation = initRot;
 	}
 
 	var showCardContent = checkIsPlayer(thisPlayer);
@@ -4379,6 +4269,7 @@ function tryAIMove(possibleCardArr){
  * 
  */
 function displayPlayerTurn(){
+	gameData.turn.animating = false;
 	gameData.match.active = true;
 	gameData.turn.highlight = true;
 	gameData.turn.played = false;

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <defs>
+    <linearGradient id="elim_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 0, 50, 0.45)" />
+      <stop offset="100%" stop-color="rgba(100, 0, 20, 0.75)" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="196" height="296" rx="16" ry="16" fill="url(#elim_grad)" stroke="#ff0033" stroke-width="3" />
+  <line x1="20" y1="20" x2="180" y2="280" stroke="#ff0033" stroke-width="8" stroke-linecap="round" />
+  <line x1="180" y1="20" x2="20" y2="280" stroke="#ff0033" stroke-width="8" stroke-linecap="round" />
+</svg>

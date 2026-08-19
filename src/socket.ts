@@ -85,7 +85,7 @@ window.initSocket = (_gameName?: string) => {
       gData.mode = currentRoomData.mode || 'nomercy';
       if (!gData.fourcolors) gData.fourcolors = {};
       gData.fourcolors.mode = gData.mode;
-      gData.fourcolors.special = gData.mode !== 'classic';
+      gData.fourcolors.special = gData.mode === 'special';
     }
 
     MultiplayerUIManager.getInstance().openLobbyModal(currentRoomData);
@@ -111,7 +111,7 @@ window.initSocket = (_gameName?: string) => {
       gData.mode = currentRoomData.mode || 'nomercy';
       if (!gData.fourcolors) gData.fourcolors = {};
       gData.fourcolors.mode = gData.mode;
-      gData.fourcolors.special = gData.mode !== 'classic';
+      gData.fourcolors.special = gData.mode === 'special';
     }
 
     MultiplayerUIManager.getInstance().openLobbyModal(currentRoomData);
@@ -165,7 +165,7 @@ window.initSocket = (_gameName?: string) => {
       if (options.mode) {
         gData.mode = options.mode;
         gData.fourcolors.mode = options.mode;
-        gData.fourcolors.special = options.mode !== 'classic';
+        gData.fourcolors.special = options.mode === 'special';
       } else if (options.special !== undefined) {
         gData.fourcolors.special = options.special;
         gData.mode = options.special ? 'special' : 'classic';
@@ -214,7 +214,7 @@ window.initSocket = (_gameName?: string) => {
           if (payload.mode) {
             gData.mode = payload.mode;
             gData.fourcolors.mode = payload.mode;
-            gData.fourcolors.special = payload.mode !== 'classic';
+            gData.fourcolors.special = payload.mode === 'special';
           } else if (payload.special !== undefined) {
             gData.fourcolors.special = payload.special;
             gData.mode = payload.special ? 'special' : 'classic';
@@ -527,7 +527,7 @@ window.startSocketMatch = () => { console.log("[Socket] startSocketMatch called"
     gData.mode = selectedMode;
     if (!gData.fourcolors) gData.fourcolors = {};
     gData.fourcolors.mode = selectedMode;
-    gData.fourcolors.special = selectedMode !== 'classic';
+    gData.fourcolors.special = selectedMode === 'special';
 
     if (typeof (window as any).prepareCards === 'function') {
       (window as any).prepareCards();

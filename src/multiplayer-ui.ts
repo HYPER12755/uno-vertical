@@ -368,7 +368,7 @@ export class MultiplayerUIManager {
         if (!gData.fourcolors) gData.fourcolors = {};
         gData.mode = selectedMode;
         gData.fourcolors.mode = selectedMode;
-        gData.fourcolors.special = selectedMode !== 'classic';
+        gData.fourcolors.special = selectedMode === 'special';
         gData.pointIndex = pointIndex;
         gData.fourcolors.point = targetPoint;
         gData.themeIndex = 0;
