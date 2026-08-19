@@ -287,16 +287,31 @@ window.initSocket = (_gameName?: string) => {
 
       case 'choosecolor':
         if (gData && gData.match) {
+          const chosenColor = data.payload;
           gData.match.value = 0;
-          gData.match.color = data.payload;
+          gData.match.color = chosenColor;
           if (typeof (window as any).toggleColors === 'function') {
             (window as any).toggleColors(false);
           }
           if (typeof (window as any).getMatchDetail === 'function') {
             (window as any).getMatchDetail();
           }
-          if (typeof (window as any).checkRoundEnd === 'function') {
-            (window as any).checkRoundEnd();
+
+          const $ = (window as any).$;
+          const curPlayerName = ($ && $.players && $.players['stats' + gData.player] && $.players['stats' + gData.player].playerName)
+            ? $.players['stats' + gData.player].playerName.text
+            : 'PLAYER ' + (gData.player + 1);
+
+          if (typeof (window as any).showChosenColorStatus === 'function') {
+            (window as any).showChosenColorStatus(curPlayerName, chosenColor, () => {
+              if (typeof (window as any).checkRoundEnd === 'function') {
+                (window as any).checkRoundEnd();
+              }
+            });
+          } else {
+            if (typeof (window as any).checkRoundEnd === 'function') {
+              (window as any).checkRoundEnd();
+            }
           }
         }
         break;
@@ -309,6 +324,16 @@ window.initSocket = (_gameName?: string) => {
             if (gData && gData.turn) gData.turn.drawCount = data.payload.cardData;
             if (typeof (window as any).drawPlayerCard === 'function') {
               (window as any).drawPlayerCard(false);
+            }
+          } else if (data.payload.card === 'stackdraw') {
+            if (gData && gData.turn) {
+              gData.turn.pendingDrawStack = 0;
+              gData.turn.pendingDrawType = '';
+              gData.turn.drawCards = gData.turn.drawCardsTotal = data.payload.cardData;
+              gData.turn.loseTurn = true;
+            }
+            if (typeof (window as any).drawPlayerCard === 'function') {
+              (window as any).drawPlayerCard(true);
             }
           } else if (data.payload.card === 'discardplayercard' && typeof (window as any).discardPlayerCard === 'function') {
             (window as any).discardPlayerCard(data.payload.cardData, true);

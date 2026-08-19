@@ -59,6 +59,12 @@ function getDeviceVer() {
 	return Number(userOSver)
 }
 
+var _seed = 1;
+function random() {
+    var x = Math.sin(_seed++) * 10000;
+    return x - Math.floor(x);
+}
+
 function shuffle(array) {
 	var currentIndex = array.length
 	, temporaryValue
@@ -68,7 +74,7 @@ function shuffle(array) {
 	// While there remain elements to shuffle...
 	while (0 !== currentIndex) {
 		// Pick a remaining element...
-		randomIndex = Math.floor(Math.random() * currentIndex);
+		randomIndex = Math.floor(random() * currentIndex);
 		currentIndex -= 1;
 		
 		// And swap it with the current element.

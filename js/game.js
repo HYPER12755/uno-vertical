@@ -535,7 +535,7 @@ function eliminatePlayerMercy(playerIndex) {
 	statusPlayerTxt.text = pName + " Eliminated (25+ Cards)";
 
 	if (gameData.activePlayers <= 1) {
-		TweenMax.to(cardsContainer, 2, {overwrite:true, onComplete:function(){
+		TweenMax.delayedCall(2, function(){
 			for (var i = 0; i < gameData.players; i++) {
 				if ($.players[i] && $.players[i].active) {
 					gameData.player = i;
@@ -544,7 +544,7 @@ function eliminatePlayerMercy(playerIndex) {
 			}
 			highlightPlayer(false);
 			showGameStatus("nomoreplayers");
-		}});
+		});
 	}
 }
 
@@ -680,16 +680,16 @@ function startColorRoulette(targetPlayer, targetColor) {
 		if (cardObj && cardObj.cardColor === targetColor) {
 			playSound('soundColorPick');
 			statusPlayerTxt.text = "Found " + targetColor.toUpperCase() + " after " + drawnCount + " cards!";
-			TweenMax.to(cardsContainer, 1, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(1, function(){
 				gameData.turn.loseTurn = true;
 				checkRoundEnd();
-			}});
+			});
 		} else {
-			TweenMax.to(cardsContainer, 0.25, {overwrite:true, onComplete:rouletteStep});
+			TweenMax.delayedCall(0.25, rouletteStep);
 		}
 	}
 
-	TweenMax.to(cardsContainer, 0.6, {overwrite:true, onComplete:rouletteStep});
+	TweenMax.delayedCall(0.6, rouletteStep);
 }
 
 function startWildDrawColor(targetPlayer, targetColor) {
@@ -740,16 +740,16 @@ function startWildDrawColor(targetPlayer, targetColor) {
 		if (cardCol === targetColor) {
 			playSound('soundColorPick');
 			statusPlayerTxt.text = "Drew " + drawnCount + " cards to find " + targetColor.toUpperCase() + "!";
-			TweenMax.to(cardsContainer, 1, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(1, function(){
 				gameData.turn.loseTurn = true;
 				checkRoundEnd();
-			}});
+			});
 		} else {
-			TweenMax.to(cardsContainer, 0.25, {overwrite:true, onComplete:drawColorStep});
+			TweenMax.delayedCall(0.25, drawColorStep);
 		}
 	}
 
-	TweenMax.to(cardsContainer, 0.6, {overwrite:true, onComplete:drawColorStep});
+	TweenMax.delayedCall(0.6, drawColorStep);
 }
 
 function forceAllOtherPlayersDraw(sourcePlayer, drawAmount) {
@@ -818,12 +818,9 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 				showGameStatus('attack_burst');
 				statusPlayerTxt.text = "Ejected " + totalCardsEjected + " cards to " + pName + "!";
 			}
-			TweenMax.to(cardsContainer, 1.2, {
-				overwrite: true,
-				onComplete: function() {
-					gameData.turn.loseTurn = true;
-					checkRoundEnd();
-				}
+			TweenMax.delayedCall(1.2, function() {
+				gameData.turn.loseTurn = true;
+				checkRoundEnd();
 			});
 			return;
 		}
@@ -856,33 +853,27 @@ function triggerAttackLauncher(targetPlayer, numPresses) {
 				playSound('soundCardDeal');
 			}
 
-			TweenMax.to(cardsContainer, 0.12, {overwrite: true, onComplete: ejectStep});
+			TweenMax.delayedCall(0.12, ejectStep);
 		} else {
 			gameData.turn.loseTurn = true;
 			checkRoundEnd();
 		}
 	}
 
-	TweenMax.to(cardsContainer, 0.5, {
-		overwrite: true,
-		onComplete: function() {
-			if (totalCardsEjected === 0) {
-				playSound('soundAlert');
-				showGameStatus('attack_safe');
-				statusPlayerTxt.text = pName + " survived (0 cards)!";
-				TweenMax.to(cardsContainer, 1, {
-					overwrite: true,
-					onComplete: function() {
-						gameData.turn.loseTurn = true;
-						checkRoundEnd();
-					}
-				});
-			} else {
-				playSound('soundAlert');
-				statusTxt.text = "LAUNCHER BURST! 🚀";
-				statusPlayerTxt.text = "Shooting " + totalCardsEjected + " cards...";
-				ejectStep();
-			}
+	TweenMax.delayedCall(0.5, function() {
+		if (totalCardsEjected === 0) {
+			playSound('soundAlert');
+			showGameStatus('attack_safe');
+			statusPlayerTxt.text = pName + " survived (0 cards)!";
+			TweenMax.delayedCall(1, function() {
+				gameData.turn.loseTurn = true;
+				checkRoundEnd();
+			});
+		} else {
+			playSound('soundAlert');
+			statusTxt.text = "LAUNCHER BURST! 🚀";
+			statusPlayerTxt.text = "Shooting " + totalCardsEjected + " cards...";
+			ejectStep();
 		}
 	});
 }
@@ -894,10 +885,10 @@ var gameSettings = {
 	cardSpace:50,
 	cardShadowX:5,
 	cardShadowY:5,
-	cardMoveSpeed:.2,
-	cardDealSpeed:.2,
-	cardFlipSpeed:.2,
-	aiThinkSpeed:1.5,
+	cardMoveSpeed:.35,
+	cardDealSpeed:.25,
+	cardFlipSpeed:.25,
+	aiThinkSpeed:1.1,
 	playerCards:7, //total player cards
 	penaltyCards:0, //total penalty cards
 	lastCardCallTimer:1, //last card call timer
@@ -1219,7 +1210,7 @@ function buildGameButton(){
 		$.colors[n].cursor = "pointer";
 		$.colors[n].addEventListener("click", function(evt) {
 			var proceedClick = checkIsPlayer(gameData.player);
-			if(proceedClick){
+			if(proceedClick && colorsContainer.visible){
 				var cIdx = (evt.currentTarget && evt.currentTarget.colorIndex !== undefined) ? evt.currentTarget.colorIndex : evt.target.colorIndex;
 				var chosenColor = gameData.colors[cIdx] || 'red';
 				if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
@@ -1229,17 +1220,21 @@ function buildGameButton(){
 				gameData.match.color = chosenColor;
 				toggleColors(false);
 				getMatchDetail();
-				if (gameData.turn.isRoulette) {
-					gameData.turn.isRoulette = false;
-					var victim = findNextPlayer(gameData.player);
-					startColorRoulette(victim, chosenColor);
-				} else if (gameData.turn.isWildDrawColor) {
-					gameData.turn.isWildDrawColor = false;
-					var victim = findNextPlayer(gameData.player);
-					startWildDrawColor(victim, chosenColor);
-				} else {
-					checkRoundEnd();
-				}
+
+				var curPlayerName = ($.players["stats" + gameData.player] && $.players["stats" + gameData.player].playerName) ? $.players["stats" + gameData.player].playerName.text : "PLAYER " + (gameData.player + 1);
+				showChosenColorStatus(curPlayerName, chosenColor, function(){
+					if (gameData.turn.isRoulette) {
+						gameData.turn.isRoulette = false;
+						var victim = findNextPlayer(gameData.player);
+						startColorRoulette(victim, chosenColor);
+					} else if (gameData.turn.isWildDrawColor) {
+						gameData.turn.isWildDrawColor = false;
+						var victim = findNextPlayer(gameData.player);
+						startWildDrawColor(victim, chosenColor);
+					} else {
+						checkRoundEnd();
+					}
+				});
 			}
 		});
 	}
@@ -1739,6 +1734,9 @@ function goPage(page){
  * 
  */
 function startGame(){
+	if (typeof window._seed !== 'undefined') {
+		window._seed = 1;
+	}
 	gameData.paused = false;
 	playerData.scores = [];
 
@@ -2062,11 +2060,8 @@ function executeFlip() {
 		}
 	}
 
-	TweenMax.to(cardsContainer, 0.8, {
-		overwrite: false,
-		onComplete: function() {
-			checkRoundEnd();
-		}
+	TweenMax.delayedCall(0.8, function() {
+		checkRoundEnd();
 	});
 }
 
@@ -2595,14 +2590,14 @@ function createCard(name, color){
 		var targetCard = evt.currentTarget || $.cards[this.cardIndex];
 		var cardIdx = (targetCard && targetCard.cardIndex !== undefined) ? targetCard.cardIndex : this.cardIndex;
 
-		if(gameData.turn.animating || gameData.turn.played){
+		if(gameData.turn.animating || gameData.turn.played || colorsContainer.visible || gameData.turn.pickColors || !gameData.turn.action){
 			return;
 		}
 
 		var proceedClick = checkIsPlayer(gameData.player);
 		if(!proceedClick){
 			// Check for Jump-In (exact identical color and value/type played out of turn)
-			if(gameSettings.houseRules && gameSettings.houseRules.jumpIn && gameData.discard.length > 0 && targetCard && targetCard.cardDeal){
+			if(!colorsContainer.visible && !gameData.turn.pickColors && !gameData.turn.animating && gameSettings.houseRules && gameSettings.houseRules.jumpIn && gameData.discard.length > 0 && targetCard && targetCard.cardDeal){
 				for(var p = 0; p < gameData.players; p++){
 					if(checkIsPlayer(p) && p !== gameData.player && $.players[p] && $.players[p].cards.indexOf(cardIdx) !== -1){
 						var topDiscard = $.cards[gameData.discard[gameData.discard.length - 1]];
@@ -2635,6 +2630,31 @@ function createCard(name, color){
 		// 2. Clicking the DRAW pile (only the top card of the draw pile)
 		var isDrawPileCard = (gameData.draw.length > 0 && cardIdx === gameData.draw[0]);
 		if(isDrawPileCard){
+			if (gameData.turn.pendingDrawStack > 0) {
+				var stackToDraw = gameData.turn.pendingDrawStack;
+				gameData.turn.pendingDrawStack = 0;
+				gameData.turn.pendingDrawType = '';
+				gameData.turn.drawCards = gameData.turn.drawCardsTotal = stackToDraw;
+				gameData.turn.drawCardsCount = 0;
+				gameData.turn.loseTurn = true;
+				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
+					postSocketUpdate('wildaction', {card:'stackdraw', cardData:stackToDraw}, false);
+				}
+				drawPlayerCard(true);
+				return;
+			}
+
+			// If player already drew a card this turn (drawCount >= 1), clicking the deck again passes the turn
+			if (gameData.turn.drawCount >= 1) {
+				gameData.turn.drawCard = false;
+				gameData.match.active = false;
+				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
+					postSocketUpdate('wildaction', {card:'passturn'}, false);
+				}
+				checkRoundEnd();
+				return;
+			}
+
 			// Only allow 1 manual draw per turn
 			if(gameData.turn.drawCount < 1 && (gameData.turn.drawCard || !gameData.turn.played)){
 				gameData.turn.drawCount++;
@@ -3070,6 +3090,20 @@ function toggleColors(con){
 	colorsContainer.visible = con;
 
 	if(con){
+		gameData.turn.animating = true;
+		gameData.turn.action = false;
+
+		// Clear highlights during color picking
+		if($.players[gameData.player]){
+			for(var n=0; n<$.players[gameData.player].cards.length; n++){
+				var cObj = $.cards[$.players[gameData.player].cards[n]];
+				if(cObj) highlightCard(cObj, false);
+			}
+		}
+		if(gameData.draw.length > 0 && $.cards[gameData.draw[0]]){
+			highlightCard($.cards[gameData.draw[0]], false);
+		}
+
 		var isPlayer = false;
 		var isActivePlayer = false;
 		if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
@@ -3089,36 +3123,52 @@ function toggleColors(con){
 				isActivePlayer = true;
 			}
 		}
+
+		var curPlayerName = ($.players["stats" + gameData.player] && $.players["stats" + gameData.player].playerName) ? $.players["stats" + gameData.player].playerName.text : "PLAYER " + (gameData.player + 1);
 		
 		if(isPlayer){
 			for(var n=0; n<4; n++){	
 				$.colors[n].gotoAndStop(n);
+				$.colors[n].alpha = isActivePlayer ? 1 : 0.4;
 			}
 			if(isActivePlayer){
-				colorSelectTxt.text = textDisplay.userPickColor;
+				colorSelectTxt.text = "CHOOSE A COLOR";
+				playSound('soundAlert');
 			}else{
-				colorSelectTxt.text = textDisplay.playerPickColor;
+				colorSelectTxt.text = curPlayerName + " IS CHOOSING A COLOR...";
 			}
 		}else{
-			colorSelectTxt.text = textDisplay.playerPickColor.replace('[NAME]', $.players["stats" + gameData.player].playerName.text);
+			colorSelectTxt.text = curPlayerName + " IS CHOOSING A COLOR...";
 
 			gameData.loopColors.round = 0;
+			gameData.loopColors.roundMax = 1;
+			gameData.loopColors.index = 0;
 			gameData.loopColors.possible = [];
-			for(var n=0;n<$.players[gameData.player].cards.length; n++){
+
+			// Smart bot color selection: pick color with most cards in hand
+			var colorCounts = {red:0, blue:0, yellow:0, green:0};
+			for(var n=0; n<$.players[gameData.player].cards.length; n++){
 				var cardIndex = $.players[gameData.player].cards[n];
-				if($.cards[cardIndex].cardColor != ''){
-					gameData.loopColors.possible.push($.cards[cardIndex].cardColor);
+				var cObj = $.cards[cardIndex];
+				if(cObj && cObj.cardColor && colorCounts[cObj.cardColor] !== undefined){
+					colorCounts[cObj.cardColor]++;
 				}
 			}
 			
-			if(gameData.loopColors.possible.length > 0){
-				shuffle(gameData.loopColors.possible);
-				gameData.loopColors.color = gameData.colors.indexOf(gameData.loopColors.possible[0]);
-			}else{
-				var randomColorIndex = Math.floor(Math.random()*gameData.colors.length);
-				gameData.loopColors.color = randomColorIndex;
+			var bestColor = 'red';
+			var maxCount = -1;
+			var colorKeys = ['red','blue','yellow','green'];
+			for(var k=0; k<colorKeys.length; k++){
+				var col = colorKeys[k];
+				if(colorCounts[col] > maxCount){
+					maxCount = colorCounts[col];
+					bestColor = col;
+				}
 			}
-			loopAutoColors();
+			gameData.loopColors.color = gameData.colors.indexOf(bestColor);
+			if(gameData.loopColors.color < 0) gameData.loopColors.color = Math.floor(Math.random() * 4);
+
+			TweenMax.delayedCall(0.5, loopAutoColors);
 		}
 	}
 }
@@ -3127,33 +3177,40 @@ function loopAutoColors(){
 	playSound('soundColorPick');
 	for(var n=0; n<4; n++){	
 		$.colors[n].gotoAndStop(n+4);
+		$.colors[n].alpha = 0.5;
 	}
 	$.colors[gameData.loopColors.index].gotoAndStop(gameData.loopColors.index);
+	$.colors[gameData.loopColors.index].alpha = 1;
 
 	var proceedLoop = true;
-	if(gameData.loopColors.round > gameData.loopColors.roundMax){
+	if(gameData.loopColors.round >= gameData.loopColors.roundMax){
 		if(gameData.loopColors.index == gameData.loopColors.color){
 			proceedLoop = false;
-			TweenMax.to(cardsContainer, 1, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(0.7, function(){
+				var chosenColor = gameData.colors[gameData.loopColors.index];
 				gameData.match.value = 0;
-				gameData.match.color = gameData.colors[gameData.loopColors.index];
+				gameData.match.color = chosenColor;
 				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online && socketData.host) {
-					postSocketUpdate('choosecolor', gameData.match.color, false);
+					postSocketUpdate('choosecolor', chosenColor, false);
 				}
 				toggleColors(false);
 				getMatchDetail();
-				if (gameData.turn.isRoulette) {
-					gameData.turn.isRoulette = false;
-					var victim = findNextPlayer(gameData.player);
-					startColorRoulette(victim, gameData.match.color);
-				} else if (gameData.turn.isWildDrawColor) {
-					gameData.turn.isWildDrawColor = false;
-					var victim = findNextPlayer(gameData.player);
-					startWildDrawColor(victim, gameData.match.color);
-				} else {
-					checkRoundEnd();
-				}
-			}});
+
+				var curPlayerName = ($.players["stats" + gameData.player] && $.players["stats" + gameData.player].playerName) ? $.players["stats" + gameData.player].playerName.text : "PLAYER " + (gameData.player + 1);
+				showChosenColorStatus(curPlayerName, chosenColor, function(){
+					if (gameData.turn.isRoulette) {
+						gameData.turn.isRoulette = false;
+						var victim = findNextPlayer(gameData.player);
+						startColorRoulette(victim, chosenColor);
+					} else if (gameData.turn.isWildDrawColor) {
+						gameData.turn.isWildDrawColor = false;
+						var victim = findNextPlayer(gameData.player);
+						startWildDrawColor(victim, chosenColor);
+					} else {
+						checkRoundEnd();
+					}
+				});
+			});
 		}
 	}
 
@@ -3164,8 +3221,21 @@ function loopAutoColors(){
 			gameData.loopColors.round++;
 		}
 
-		TweenMax.to(cardsContainer, .1, {overwrite:true, onComplete:loopAutoColors});
+		TweenMax.delayedCall(0.22, loopAutoColors);
 	}
+}
+
+function showChosenColorStatus(playerName, colorName, callback){
+	statusTxt.text = colorName.toUpperCase() + " CHOSEN!";
+	statusPlayerTxt.text = playerName + " selected " + colorName.toUpperCase();
+	playSound('soundColorPick');
+
+	statusContainer.alpha = 0;
+	TweenMax.to(statusContainer, 0.3, {alpha:1, overwrite:true, onComplete:function(){
+		TweenMax.to(statusContainer, 0.3, {delay:0.8, alpha:0, overwrite:true, onComplete:function(){
+			if(typeof callback === 'function') callback();
+		}});
+	}});
 }
 
 /*!
@@ -3185,7 +3255,7 @@ function revealPlayerCards(playerIndex){
 		}
 	}
 
-	TweenMax.to(cardsContainer, 3, {overwrite:true, onComplete:function(){
+	TweenMax.delayedCall(3, function(){
 		if(!isPlayer){
 			for(var n=0; n<$.players[playerIndex].cards.length; n++){
 				var thisCard = $.cards[$.players[playerIndex].cards[n]];
@@ -3194,7 +3264,7 @@ function revealPlayerCards(playerIndex){
 		}
 		toggleTargetIcon();
 		checkRoundEnd();
-	}});
+	});
 }
 
 function choosePlayerCards(playerIndex){
@@ -3301,7 +3371,7 @@ function autoGiveCardToPlayer(){
 	positionPlayerCards(gameData.player, true);
 	positionPlayerCards(gameData.targetPlayer, true);
 
-	TweenMax.to(cardsContainer, .2, {overwrite:true, onComplete:function(){
+	TweenMax.delayedCall(0.2, function(){
 		if(gameData.turn.giveCards == 0 || $.players[gameData.player].cards.length == 0){
 			for(var n=0; n<$.players[gameData.player].cards.length; n++){
 				var cardIndex = $.players[gameData.player].cards[n];
@@ -3317,7 +3387,7 @@ function autoGiveCardToPlayer(){
 		}else{
 			autoGiveCardToPlayer();
 		}
-	}});
+	});
 }
 
 function swapPlayerCards(playerIndex){
@@ -3361,10 +3431,10 @@ function swapPlayerCards(playerIndex){
 	positionPlayerCards(gameData.player, true);
 
 	var moveSpeed = gameSettings.cardMoveSpeed || 0.3;
-	TweenMax.to(cardsContainer, moveSpeed + 0.1, {overwrite:false, onComplete:function(){
+	TweenMax.delayedCall(moveSpeed + 0.1, function(){
 		gameData.turn.animating = false;
 		checkRoundEnd();
-	}});
+	});
 }
 
 function toggleTargetIcon(playerIndex){
@@ -3425,7 +3495,8 @@ function toggleTargetPlayers(con){
 			toggleTargetPlayers(false);
 			toggleTargetIcon(possiblePlayer[0].index);
 
-			TweenMax.to(cardsContainer, gameSettings.aiThinkSpeed, {overwrite:true, onComplete:function(){
+			var aiSpeed = gameSettings.aiThinkSpeed || 0.5;
+			TweenMax.delayedCall(aiSpeed, function(){
 				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online && socketData.host) {
 					postSocketUpdate('targetaim', possiblePlayer[0].index, false);
 				}
@@ -3443,7 +3514,7 @@ function toggleTargetPlayers(con){
 				}else{
 					targetedPlayerDraw(possiblePlayer[0].index);
 				}
-			}});
+			});
 		}
 	}else{
 		showGameGuide();
@@ -4163,7 +4234,7 @@ function drawPlayerCard(turn){
 	positionPlayerCards(thisPlayer, true);
 
 	var cardSpeed = gameSettings.cardDealSpeed || 0.2;
-	TweenMax.to(cardsContainer, cardSpeed, {overwrite:false, onComplete:drawPlayerCardComplete, onCompleteParams:[thisPlayer, thisCard]});
+	TweenMax.delayedCall(cardSpeed, drawPlayerCardComplete, [thisPlayer, thisCard]);
 }
 
 function drawPlayerCardComplete(index, card){
@@ -4182,9 +4253,9 @@ function drawPlayerCardComplete(index, card){
 	}
 
 	if (gameSettings.houseRules && gameSettings.houseRules.drawUntilPlayable && gameData.turn.drawCount > 0 && checkPossibleCard(index).length === 0 && !gameData.turn.loseTurn) {
-		TweenMax.to(cardsContainer, 0.2, {overwrite:false, onComplete:function(){
+		TweenMax.delayedCall(0.2, function(){
 			drawPlayerCard(false);
-		}});
+		});
 		return;
 	}
 
@@ -4232,28 +4303,30 @@ function tryAIMove(possibleCardArr){
 		return;
 	}
 
+	var aiSpeed = gameSettings.aiThinkSpeed || 1.1;
+
 	if(gameData.turn.pendingDrawStack > 0){
-		var aiSpeed = gameSettings.aiThinkSpeed;
 		if(possibleCardArr.length > 0){
-			TweenMax.to($.players[gameData.player], aiSpeed, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(aiSpeed, function(){
 				var chosenCard = possibleCardArr[0];
 				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online && socketData.host) {
 					postSocketUpdate('wildaction', {card:'discardplayercard', cardData:chosenCard}, false);
 				}
 				discardPlayerCard(chosenCard, true);
-			}});
+			});
 		}else{
-			TweenMax.to($.players[gameData.player], aiSpeed, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(aiSpeed, function(){
 				var stackToDraw = gameData.turn.pendingDrawStack;
 				gameData.turn.pendingDrawStack = 0;
 				gameData.turn.pendingDrawType = '';
 				gameData.turn.drawCards = gameData.turn.drawCardsTotal = stackToDraw;
+				gameData.turn.drawCardsCount = 0;
 				gameData.turn.loseTurn = true;
 				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online && socketData.host) {
 					postSocketUpdate('wildaction', {card:'stackdraw', cardData:stackToDraw}, false);
 				}
 				drawPlayerCard(true);
-			}});
+			});
 		}
 		return;
 	}
@@ -4261,9 +4334,9 @@ function tryAIMove(possibleCardArr){
 	if(gameData.turn.loseTurn){
 		checkRoundEnd();
 	}else{
-		var aiSpeed = gameData.turn.drawCount > 0 ? .2 : gameSettings.aiThinkSpeed;
+		var moveSpeed = gameData.turn.drawCount > 0 ? 0.8 : aiSpeed;
 		if(possibleCardArr.length > 0){
-			TweenMax.to($.players[gameData.player], aiSpeed, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(moveSpeed, function(){
 				var chosenCard = possibleCardArr[0];
 				// AI smart prioritization for No Mercy actions
 				for (var i = 0; i < possibleCardArr.length; i++) {
@@ -4281,21 +4354,20 @@ function tryAIMove(possibleCardArr){
 					postSocketUpdate('wildaction', {card:'discardplayercard', cardData:chosenCard}, false);
 				}
 				discardPlayerCard(chosenCard, true);
-			}});
+			});
 		}else{
 			if(gameData.turn.drawCount >= 1){
-				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online && socketData.host) {
-					postSocketUpdate('wildaction', {card:'passturn'}, false);
-				}
-				checkRoundEnd();
+				TweenMax.delayedCall(0.7, function(){
+					checkRoundEnd();
+				});
 			}else{
-				TweenMax.to($.players[gameData.player], aiSpeed, {overwrite:true, onComplete:function(){
+				TweenMax.delayedCall(moveSpeed, function(){
 					gameData.turn.drawCount++;
 					if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online && socketData.host) {
 						postSocketUpdate('wildaction', {card:'drawplayercard', cardData:gameData.turn.drawCount}, false);
 					}
 					drawPlayerCard(false);
-				}});
+				});
 			}
 		}
 	}
@@ -4402,6 +4474,10 @@ function loopCardAction(){
 							}
 						} else {
 							gameData.turn.drawCard = false;
+							if(gameData.draw.length > 0){
+								highlightCard($.cards[gameData.draw[0]], false);
+								toggleCardAction($.cards[gameData.draw[0]], false);
+							}
 						}
 					}else{
 						if (gameData.turn.pendingDrawStack > 0) {
@@ -4416,9 +4492,6 @@ function loopCardAction(){
 							if(gameData.turn.drawCount >= 1){
 								gameData.turn.drawCard = false;
 								gameData.match.active = false;
-								if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
-									postSocketUpdate('wildaction', {card:'passturn'}, false);
-								}
 								checkRoundEnd();
 							}else{
 								gameData.turn.drawCard = true;
@@ -4561,13 +4634,27 @@ function killAnimateBlink(obj){
  */
 function checkRoundEnd(){
 	gameData.turn.action = false;
+	gameData.turn.animating = false;
 	togglePlayerSkip(false);
+	
+	if(gameData.draw.length > 0 && $.cards[gameData.draw[0]]){
+		highlightCard($.cards[gameData.draw[0]], false);
+		toggleCardAction($.cards[gameData.draw[0]], false);
+	}
+	if($.players[gameData.player]){
+		for(var n=0; n<$.players[gameData.player].cards.length; n++){
+			var cObj = $.cards[$.players[gameData.player].cards[n]];
+			if(cObj){
+				highlightCard(cObj, false);
+			}
+		}
+	}
 
-	if($.players[gameData.player].cards.length == 0){
+	if($.players[gameData.player] && $.players[gameData.player].cards.length == 0){
 		//end
 		highlightPlayer(false);
 		showGameStatus("emptycards");
-	}else if(gameData.activePlayers == 1){
+	}else if(gameData.activePlayers <= 1){
 		//end
 		highlightPlayer(false);
 		showGameStatus("nomoreplayers");
@@ -4578,9 +4665,9 @@ function checkRoundEnd(){
 		TweenMax.to(tweenData, .5, {tweenScore:playerData.scores[gameData.player], overwrite:true, onUpdate:function(){
 			$.players["stats" + gameData.player].playerScore.text = textDisplay.playerScore.replace("[NUMBER]", Math.round(tweenData.tweenScore));
 		}, onComplete:function(){
-			TweenMax.to(cardsContainer, 1, {overwrite:true, onComplete:function(){
+			TweenMax.delayedCall(1, function(){
 				checkRoundEnd();
-			}});
+			});
 		}});
 	}else if(gameData.turn.shuffle){
 		gameData.turn.shuffle = false;
@@ -4662,9 +4749,9 @@ function shufflePlayerCards(allCards){
 		}
 	}
 
-	TweenMax.to(cardsContainer, 1, {overwrite:true, onComplete:function(){
+	TweenMax.delayedCall(1, function(){
 		checkRoundEnd();
-	}});
+	});
 }
 
 function updatePlayerScore(player){
@@ -4713,7 +4800,7 @@ function nextPlayerTurn(next){
 		gameData.turn.frozenColor = false;
 	}
 
-	if(!$.players[gameData.player].active){
+	if(!$.players[gameData.player] || !$.players[gameData.player].active){
 		nextPlayerTurn(true);
 		return;
 	}else if(gameData.turn.skip){
@@ -4830,35 +4917,38 @@ function showGameStatus(con){
 	itemStatus.visible = true;
 	itemStatusLong.visible = false;
 
+	var shouldAdvanceTurn = false;
+
 	if(con == 'penalty'){
 		soundName = "soundWarning";
 		delayStart = .5;
 		statusTxt.text = textDisplay.playerPenalty;
-		TweenMax.to(cardsContainer, 2, {overwrite:true, onComplete:function(){
+		TweenMax.delayedCall(2, function(){
 			loopCardAction();
-		}});
+		});
 	}else if(con == 'emptycards'){
 		soundName = "soundWinner";
 		delayStart = 1;
 		statusTxt.text = textDisplay.emptyCards;
 		statusPlayerTxt.text = statusPlayerTxt.text + textDisplay.playerWon;
-		TweenMax.to(cardsContainer, 3, {overwrite:true, onComplete:function(){
+		TweenMax.delayedCall(3, function(){
 			toggleRoundScore(true, true);
-		}});
+		});
 	}else if(con == 'nomoreplayers'){
 		soundName = "soundWinner";
 		delayStart = 1;
 		statusTxt.text = textDisplay.noMorePlayers;
 		statusPlayerTxt.text = statusPlayerTxt.text + textDisplay.playerWon;
-		TweenMax.to(cardsContainer, 3, {overwrite:true, onComplete:function(){
+		TweenMax.delayedCall(3, function(){
 			toggleRoundScore(true, true);
-		}});
+		});
 	}else if(con == 'drawstack'){
 		soundName = "soundWarning";
 		delayStart = .2;
 		delayMessage = 1.2;
 		statusTxt.text = "STACK: +" + gameData.turn.pendingDrawStack + " CARDS!";
 		statusPlayerTxt.text = "Defend or Draw Stack";
+		shouldAdvanceTurn = true;
 	}else if(con == 'jump_in'){
 		soundName = "soundAction";
 		delayStart = .1;
@@ -4870,6 +4960,7 @@ function showGameStatus(con){
 		delayStart = .3;
 		statusTxt.text = "7-SWAP HANDS!";
 		statusPlayerTxt.text = "Choose a player to swap";
+		shouldAdvanceTurn = true;
 	}else if(con == 'zero_pass'){
 		soundName = "soundDirection";
 		delayStart = .3;
@@ -4887,30 +4978,35 @@ function showGameStatus(con){
 		delayMessage = 1.4;
 		statusTxt.text = "FLIPPED TO DARK SIDE! 🌙";
 		statusPlayerTxt.text = "Dark cards & colors active!";
+		shouldAdvanceTurn = true;
 	}else if(con == 'flip_light'){
 		soundName = "soundDirection";
 		delayStart = .2;
 		delayMessage = 1.4;
 		statusTxt.text = "FLIPPED TO LIGHT SIDE! ☀️";
 		statusPlayerTxt.text = "Light cards & colors active!";
+		shouldAdvanceTurn = true;
 	}else if(con == 'flex_draw1_all'){
 		soundName = "soundWarning";
 		delayStart = .2;
 		delayMessage = 1.4;
 		statusTxt.text = "FLEX: +1 TO ALL PLAYERS! ⚡";
 		statusPlayerTxt.text = "All opponents draw 1 card!";
+		shouldAdvanceTurn = true;
 	}else if(con == 'flex_wildalldraw'){
 		soundName = "soundWarning";
 		delayStart = .2;
 		delayMessage = 1.4;
 		statusTxt.text = "FLEX: ALL DRAW 2! ⚡";
 		statusPlayerTxt.text = "All opponents draw 2 cards!";
+		shouldAdvanceTurn = true;
 	}else if(con == 'power_recharged'){
 		soundName = "soundColorPick";
 		delayStart = .2;
 		delayMessage = 1.2;
 		statusTxt.text = "POWER RECHARGED! ⚡";
 		statusPlayerTxt.text = "Power Card is active (Green)";
+		shouldAdvanceTurn = true;
 	}else if(con == 'attack_safe'){
 		soundName = "soundAlert";
 		delayStart = .2;
@@ -4923,36 +5019,36 @@ function showGameStatus(con){
 		delayMessage = 1.4;
 		statusTxt.text = "LAUNCHER BURST! 🚀";
 		statusPlayerTxt.text = "Cards ejected!";
-	}else if(con == 'targeteddraw2'){
+	}else if(con == 'targeteddraw2' || con == 'targeteddraw4' || con == 'wildtargeteddraw2'){
 		soundName = "soundAction";
 		delayStart = .2;
 		delayMessage = 1.2;
-		statusTxt.text = "TARGETED DRAW 2!";
+		statusTxt.text = con == 'targeteddraw4' ? "TARGETED DRAW 4!" : "TARGETED DRAW 2!";
 		statusPlayerTxt.text = "Choose target player";
-	}else if(con == 'targeteddraw4'){
-		soundName = "soundAction";
-		delayStart = .2;
-		delayMessage = 1.2;
-		statusTxt.text = "TARGETED DRAW 4!";
-		statusPlayerTxt.text = "Choose target player";
+		shouldAdvanceTurn = true;
 	}else{
 		soundName = "soundAction";
 		delayStart = .5;
 		delayMessage = 1;
 		statusTxt.text = findCardText(con);
 		statusPlayerTxt.text = '';
+		shouldAdvanceTurn = true;
+	}
 
+	if(shouldAdvanceTurn){
 		if($.players[gameData.player]){
 			for(var n=0; n<$.players[gameData.player].cards.length; n++){
-				highlightCard($.cards[$.players[gameData.player].cards[n]], false);
+				var cObj = $.cards[$.players[gameData.player].cards[n]];
+				if(cObj) highlightCard(cObj, false);
 			}
 		}
 		if(gameData.draw.length > 0 && $.cards[gameData.draw[0]]){
 			highlightCard($.cards[gameData.draw[0]], false);
 		}
-		TweenMax.to(cardsContainer, 2.5, {overwrite:true, onComplete:function(){
+		var waitTime = (con == 'drawstack' || con.indexOf('flex') !== -1 || con.indexOf('flip') !== -1) ? 1.2 : 2.0;
+		TweenMax.delayedCall(waitTime, function(){
 			checkRoundEnd();
-		}});
+		});
 	}
 
 	if(statusTxt.getMeasuredWidth() > 260){
