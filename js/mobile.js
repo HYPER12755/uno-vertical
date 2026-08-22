@@ -34,7 +34,7 @@ function checkMobileOrientation() {
 		isLandscape=true;
 	}
 	
-	if($.editor.enable){
+	if(typeof $ !== 'undefined' && $.editor && $.editor.enable){
 		viewport.isLandscape = true;
 	}else{
 		viewport.isLandscape = isLandscape;	

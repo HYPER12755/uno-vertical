@@ -21,6 +21,17 @@
 }());
 
 // Place any jQuery/helper plugins in here.
+window.sendEvent = window.sendEvent || function(type, value) {
+    if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, value: value }));
+    }
+};
+var sendEvent = function(type, value) {
+    if (typeof window.sendEvent === 'function') {
+        window.sendEvent(type, value);
+    }
+};
+
 function checkContentHeight(target){
 	var stageHeight=$( window ).height();
 	var newHeight = (stageHeight/2)-(target.height()/2);

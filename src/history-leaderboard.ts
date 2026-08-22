@@ -1,12 +1,18 @@
 /**
  * History & Leaderboard Manager
- * Stores and manages local match history, player statistics, and leaderboard data.
+ * Handles local profile persistence, match record keeping, win-rate analytics, streaks, and leaderboard tables
  */
+
+export interface PlayerProfile {
+  name: string;
+  avatarIcon: string;
+  avatarColor: string;
+}
 
 export interface MatchRecord {
   id: string;
   timestamp: number;
-  mode: 'classic' | 'special';
+  mode: string;
   playersCount: number;
   playerRank: number;
   winnerName: string;
@@ -15,144 +21,183 @@ export interface MatchRecord {
   durationSeconds: number;
 }
 
-export interface PlayerProfile {
-  name: string;
-  avatarColor: string;
-  avatarIcon: string;
-}
-
 export interface PlayerStats {
-  gamesPlayed: number;
   wins: number;
-  losses: number;
+  matches: number;
+  winRate: number;
   totalScore: number;
   currentStreak: number;
   bestStreak: number;
-  winRate: number;
 }
 
-const STORAGE_KEYS = {
-  PROFILE: 'fourcolors_profile',
-  HISTORY: 'fourcolors_match_history',
-  STATS: 'fourcolors_player_stats',
-};
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  avatar: string;
+  wins: number;
+  winRate: number;
+  score: number;
+}
 
-const DEFAULT_PROFILE: PlayerProfile = {
-  name: 'Player 1',
-  avatarColor: '#e74c3c',
-  avatarIcon: '🃏'
-};
-
-const DEFAULT_STATS: PlayerStats = {
-  gamesPlayed: 0,
-  wins: 0,
-  losses: 0,
-  totalScore: 0,
-  currentStreak: 0,
-  bestStreak: 0,
-  winRate: 0
-};
-
-// Seed sample competitive players for global leaderboard
-export const MOCK_LEADERBOARD = [
-  { rank: 1, name: 'CardMaster_99', wins: 142, games: 178, winRate: 80, score: 38400, avatar: '👑', color: '#f1c40f' },
-  { rank: 2, name: 'WildDrawKing', wins: 118, games: 160, winRate: 74, score: 31200, avatar: '🔥', color: '#e74c3c' },
-  { rank: 3, name: 'UnoNinja', wins: 95, games: 135, winRate: 70, score: 26800, avatar: '⚡', color: '#3498db' },
-  { rank: 4, name: 'ColorQueen', wins: 84, games: 124, winRate: 68, score: 23100, avatar: '💎', color: '#9b59b6' },
-  { rank: 5, name: 'ReverseReverse', wins: 76, games: 119, winRate: 64, score: 19800, avatar: '🚀', color: '#2ecc71' },
+export const MOCK_LEADERBOARD: LeaderboardEntry[] = [
+  { rank: 1, name: 'WildMaster99', avatar: '👑', wins: 84, winRate: 78, score: 14200 },
+  { rank: 2, name: 'CardNinja', avatar: '⚡', wins: 72, winRate: 69, score: 11850 },
+  { rank: 3, name: 'ColorQueen', avatar: '💎', wins: 65, winRate: 64, score: 10400 },
+  { rank: 4, name: 'NoMercyPro', avatar: '💥', wins: 58, winRate: 61, score: 9250 },
+  { rank: 5, name: 'DrawFourKing', avatar: '🃏', wins: 49, winRate: 55, score: 7900 }
 ];
 
+const STORAGE_KEYS = {
+  PROFILE: 'fc_player_profile',
+  HISTORY: 'fc_match_history',
+  STATS: 'fc_player_stats'
+};
+
 export class HistoryLeaderboardManager {
-  static getProfile(): PlayerProfile {
+  private static defaultProfile: PlayerProfile = {
+    name: 'CardPlayer',
+    avatarIcon: '🃏',
+    avatarColor: '#e74c3c'
+  };
+
+  public static getProfile(): PlayerProfile {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.PROFILE);
-      if (data) return JSON.parse(data);
+      const stored = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      if (stored) {
+        return { ...this.defaultProfile, ...JSON.parse(stored) };
+      }
     } catch (e) {
-      console.warn('Failed to load profile from localStorage', e);
+      console.warn('[HistoryLeaderboardManager] Error reading profile from storage:', e);
     }
-    return { ...DEFAULT_PROFILE, name: `Player_${Math.floor(1000 + Math.random() * 9000)}` };
+    return { ...this.defaultProfile };
   }
 
-  static saveProfile(profile: Partial<PlayerProfile>): PlayerProfile {
-    const current = this.getProfile();
-    const updated = { ...current, ...profile };
+  public static saveProfile(partial: Partial<PlayerProfile>): PlayerProfile {
     try {
+      const current = this.getProfile();
+      const updated = { ...current, ...partial };
       localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+      return updated;
     } catch (e) {
-      console.warn('Failed to save profile', e);
+      console.warn('[HistoryLeaderboardManager] Error saving profile to storage:', e);
+      return this.defaultProfile;
     }
-    return updated;
   }
 
-  static getStats(): PlayerStats {
+  public static getHistory(): MatchRecord[] {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.STATS);
-      if (data) return JSON.parse(data);
+      const stored = localStorage.getItem(STORAGE_KEYS.HISTORY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
     } catch (e) {
-      console.warn('Failed to load stats', e);
-    }
-    return { ...DEFAULT_STATS };
-  }
-
-  static getHistory(): MatchRecord[] {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.HISTORY);
-      if (data) return JSON.parse(data);
-    } catch (e) {
-      console.warn('Failed to load match history', e);
+      console.warn('[HistoryLeaderboardManager] Error reading match history:', e);
     }
     return [];
   }
 
-  static addMatch(record: Omit<MatchRecord, 'id' | 'timestamp'>): MatchRecord {
-    const fullRecord: MatchRecord = {
-      ...record,
-      id: 'match_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-      timestamp: Date.now()
-    };
-
-    // Update history
-    const history = this.getHistory();
-    history.unshift(fullRecord);
-    // Keep last 50 matches
-    if (history.length > 50) history.pop();
-
+  public static addMatch(matchData: any): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
-    } catch (e) {
-      console.warn('Failed to save match history', e);
-    }
+      const history = this.getHistory();
+      const newRecord: MatchRecord = {
+        id: 'match_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        timestamp: Date.now(),
+        mode: matchData.mode || 'classic',
+        playersCount: matchData.playersCount || 4,
+        playerRank: matchData.playerRank || (matchData.isWin ? 1 : 2),
+        winnerName: matchData.winnerName || (matchData.isWin ? 'You' : 'Opponent'),
+        playerScore: matchData.playerScore || 0,
+        isWin: matchData.isWin === true || matchData.playerRank === 1,
+        durationSeconds: matchData.durationSeconds || 120
+      };
 
-    // Update stats
-    const stats = this.getStats();
-    stats.gamesPlayed++;
-    stats.totalScore += record.playerScore;
-
-    if (record.isWin) {
-      stats.wins++;
-      stats.currentStreak++;
-      if (stats.currentStreak > stats.bestStreak) {
-        stats.bestStreak = stats.currentStreak;
+      history.unshift(newRecord);
+      // Keep up to latest 50 matches
+      if (history.length > 50) {
+        history.length = 50;
       }
-    } else {
-      stats.losses++;
-      stats.currentStreak = 0;
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+      this.recalculateStats(history);
+    } catch (e) {
+      console.warn('[HistoryLeaderboardManager] Error adding match record:', e);
+    }
+  }
+
+  public static clearHistory(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.HISTORY);
+      localStorage.removeItem(STORAGE_KEYS.STATS);
+    } catch (e) {
+      console.warn('[HistoryLeaderboardManager] Error clearing history:', e);
+    }
+  }
+
+  public static getStats(): PlayerStats {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.STATS);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn('[HistoryLeaderboardManager] Error reading stats:', e);
     }
 
-    stats.winRate = Math.round((stats.wins / stats.gamesPlayed) * 100);
+    // Default or recalculate from history
+    const history = this.getHistory();
+    return this.recalculateStats(history);
+  }
+
+  private static recalculateStats(history: MatchRecord[]): PlayerStats {
+    let wins = 0;
+    let totalScore = 0;
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let countingCurrentStreak = true;
+
+    for (const match of history) {
+      if (match.isWin) {
+        wins++;
+        if (countingCurrentStreak) {
+          currentStreak++;
+        }
+      } else {
+        countingCurrentStreak = false;
+      }
+      totalScore += (match.playerScore || 0);
+    }
+
+    // Calculate best streak across entire history (sorted newest to oldest)
+    let tempStreak = 0;
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].isWin) {
+        tempStreak++;
+        if (tempStreak > bestStreak) bestStreak = tempStreak;
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    const matches = history.length;
+    const winRate = matches > 0 ? Math.round((wins / matches) * 100) : 0;
+
+    const stats: PlayerStats = {
+      wins,
+      matches,
+      winRate,
+      totalScore,
+      currentStreak,
+      bestStreak: Math.max(bestStreak, currentStreak)
+    };
 
     try {
       localStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(stats));
     } catch (e) {
-      console.warn('Failed to save stats', e);
+      console.warn('[HistoryLeaderboardManager] Error saving stats:', e);
     }
 
-    return fullRecord;
-  }
-
-  static clearHistory(): void {
-    try {
-      localStorage.removeItem(STORAGE_KEYS.HISTORY);
-    } catch (e) {}
+    return stats;
   }
 }

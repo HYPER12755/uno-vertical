@@ -16,13 +16,22 @@ export interface GameModeInfo {
 }
 
 export const GAME_MODES: Record<string, GameModeInfo> = {
+  classic: {
+    id: 'classic',
+    name: 'Classic UNO',
+    badge: '108 Cards • Standard',
+    icon: '🃏',
+    count: '108 Cards',
+    desc: 'Traditional standard rules & pure gameplay (No special cards)',
+    badgeColor: '#2ecc71'
+  },
   nomercy: {
     id: 'nomercy',
     name: "Show 'Em No Mercy",
     badge: '168 Cards • Brutal',
     icon: '💥',
     count: '168 Cards',
-    desc: 'Draw 10, Skip Everyone, 25 Mercy KO & Stacking',
+    desc: 'Draw 10, Draw 6, Skip Everyone, 25 Mercy KO & Stacking',
     badgeColor: '#e74c3c'
   },
   flip: {
@@ -52,6 +61,15 @@ export const GAME_MODES: Record<string, GameModeInfo> = {
     desc: 'Launcher card bursts, Attack! & Hit 2',
     badgeColor: '#e67e22'
   },
+  allwild: {
+    id: 'allwild',
+    name: 'UNO All Wild',
+    badge: '112 Cards • All Wild',
+    icon: '🌈',
+    count: '112 Cards',
+    desc: '100% Wild deck, Wild Reverse, Wild Skip Everyone, Wild Swap',
+    badgeColor: '#9b59b6'
+  },
   special: {
     id: 'special',
     name: 'Action Wilds',
@@ -60,15 +78,6 @@ export const GAME_MODES: Record<string, GameModeInfo> = {
     count: '112 Cards',
     desc: 'Hand swap, True Sight & Targeted Draw 2',
     badgeColor: '#3498db'
-  },
-  classic: {
-    id: 'classic',
-    name: 'Classic UNO',
-    badge: '108 Cards • Standard',
-    icon: '🃏',
-    count: '108 Cards',
-    desc: 'Traditional standard rules & pure gameplay',
-    badgeColor: '#2ecc71'
   }
 };
 
@@ -137,6 +146,9 @@ export class MultiplayerUIManager {
       </div>
 
       <div class="fc-top-actions">
+        <div id="fc-latency-indicator" style="display: none; align-items: center; justify-content: center; margin-right: 15px; font-size: 14px; font-weight: 500; padding: 5px 10px; background: rgba(0,0,0,0.5); border-radius: 8px; color: #2ecc71;">
+          <span style="margin-right: 5px;">📶</span> <span id="fc-latency-text">-- ms</span>
+        </div>
         <button class="fc-nav-btn fc-nav-btn-local" id="fc-btn-local" title="Play vs AI Bots">
           <span class="fc-nav-icon">🎮</span>
           <span class="fc-nav-label">Play Local</span>
@@ -169,6 +181,28 @@ export class MultiplayerUIManager {
     if (topBar) {
       topBar.style.display = visible ? 'flex' : 'none';
     }
+  }
+
+  public updateLatency(latency: number) {
+    const indicator = document.getElementById('fc-latency-indicator');
+    const textEl = document.getElementById('fc-latency-text');
+    if (!indicator || !textEl) return;
+    
+    indicator.style.display = 'flex';
+    textEl.innerText = `${latency} ms`;
+    
+    if (latency < 100) {
+      indicator.style.color = '#2ecc71'; // Green
+    } else if (latency < 250) {
+      indicator.style.color = '#f1c40f'; // Yellow
+    } else {
+      indicator.style.color = '#e74c3c'; // Red
+    }
+  }
+
+  public hideLatency() {
+    const indicator = document.getElementById('fc-latency-indicator');
+    if (indicator) indicator.style.display = 'none';
   }
 
   public async copyToClipboard(text: string, successMsg?: string, icon?: string): Promise<boolean> {
@@ -338,7 +372,7 @@ export class MultiplayerUIManager {
 
     document.getElementById('fc-start-local-btn')?.addEventListener('click', () => {
       const players = parseInt(document.querySelector('#fc-local-players .active')?.getAttribute('data-val') || '2');
-      const selectedMode = document.querySelector('#fc-local-modes .fc-mode-card.active')?.getAttribute('data-mode') || 'nomercy';
+      const selectedMode = document.querySelector('#fc-local-modes .fc-mode-card.active')?.getAttribute('data-mode') || 'classic';
       const pointIndex = parseInt(document.querySelector('#fc-local-points .active')?.getAttribute('data-val') || '0');
 
       const houseRules = {
@@ -540,7 +574,7 @@ export class MultiplayerUIManager {
 
     document.getElementById('fc-do-create-room')?.addEventListener('click', () => {
       const maxPlayers = parseInt(document.querySelector('#fc-create-players .active')?.getAttribute('data-val') || '4');
-      const selectedMode = document.querySelector('#fc-create-modes .fc-mode-card.active')?.getAttribute('data-mode') || 'nomercy';
+      const selectedMode = document.querySelector('#fc-create-modes .fc-mode-card.active')?.getAttribute('data-mode') || 'classic';
       const pointIndex = parseInt(document.querySelector('#fc-create-points .active')?.getAttribute('data-val') || '0');
 
       const houseRules = {
@@ -660,7 +694,7 @@ export class MultiplayerUIManager {
 
     container.innerHTML = rooms.map(r => {
       const modeKey = r.mode || (r.special ? 'special' : 'classic');
-      const modeInfo = GAME_MODES[modeKey] || GAME_MODES.nomercy;
+      const modeInfo = GAME_MODES[modeKey] || GAME_MODES.classic;
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);">
           <div>
@@ -705,8 +739,8 @@ export class MultiplayerUIManager {
     const hasEnoughPlayers = players.length >= 2;
     const hasBot = players.some((p: any) => p.isBot);
     const canAddBot = players.length < maxPlayers;
-    const modeKey = this.currentRoom.mode || (this.currentRoom.special ? 'special' : 'nomercy');
-    const modeInfo = GAME_MODES[modeKey] || GAME_MODES.nomercy;
+    const modeKey = this.currentRoom.mode || (this.currentRoom.special ? 'special' : 'classic');
+    const modeInfo = GAME_MODES[modeKey] || GAME_MODES.classic;
 
     let chatHtml = `<div class="fc-chat-msg"><span class="fc-chat-sender">System:</span> Welcome to Room ${roomId}! Tap reaction buttons to chat.</div>`;
     const existingChat = document.getElementById('fc-chat-box');
@@ -1012,7 +1046,7 @@ export class MultiplayerUIManager {
                 return `
                   <tr>
                     <td style="font-size: 12px; color: var(--fc-text-dim);">${dateStr}</td>
-                    <td>${m.mode === 'special' ? 'Special Wilds' : 'Classic'}</td>
+                    <td>${GAME_MODES[m.mode]?.name || m.mode || 'Classic UNO'}</td>
                     <td>${m.playersCount} Players</td>
                     <td>
                       <span class="${m.isWin ? 'fc-win-tag' : 'fc-loss-tag'}">

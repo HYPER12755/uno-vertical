@@ -258,7 +258,15 @@ function handleProgress() {
  */
 function handleComplete() {
 	toggleLoader(false);
-	sendEvent("gameLoaded",0);
+	try {
+		if (typeof sendEvent === 'function') {
+			sendEvent("gameLoaded", 0);
+		} else if (typeof window.sendEvent === 'function') {
+			window.sendEvent("gameLoaded", 0);
+		}
+	} catch (e) {
+		console.warn("sendEvent error:", e);
+	}
 	initMain();
 };
 

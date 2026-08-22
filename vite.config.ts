@@ -1,5 +1,11 @@
 import { defineConfig, Plugin } from 'vite';
 import { Server as SocketIOServer } from 'socket.io';
+const {
+  startServerGameSession,
+  getServerGameSession,
+  removeServerGameSession,
+  handleClientGameMessage
+} = require('./server/server_game_controller');
 
 function socketServerPlugin(): Plugin {
   return {
@@ -59,7 +65,8 @@ function socketServerPlugin(): Plugin {
             host: socket.id,
             players: [{ id: socket.id, name: playerName, avatar: avatar, isReady: true, isHost: true, isBot: false }],
             maxPlayers: maxPlayers,
-            special: data.special !== undefined ? data.special : true,
+            mode: data.mode || (data.special === false ? 'classic' : 'nomercy'),
+            special: data.special !== undefined ? data.special : (data.mode !== 'classic'),
             pointIndex: data.pointIndex || 0,
             themeIndex: data.themeIndex || 0,
             isPlaying: false,
@@ -107,6 +114,7 @@ function socketServerPlugin(): Plugin {
           io.to(roomId).emit('updatePlayers', room.players);
           io.to(roomId).emit('roomOptions', {
             maxPlayers: room.maxPlayers,
+            mode: room.mode,
             special: room.special,
             pointIndex: room.pointIndex,
             themeIndex: room.themeIndex
@@ -144,6 +152,16 @@ function socketServerPlugin(): Plugin {
           if (!data.roomId) return;
           const room = rooms.get(data.roomId);
           if (!room || room.host !== socket.id) return;
+
+          if (data.botId) {
+            const idx = room.players.findIndex((p: any) => p.id === data.botId && p.isBot);
+            if (idx !== -1) {
+              room.players.splice(idx, 1);
+              io.to(data.roomId).emit('updatePlayers', room.players);
+              io.emit('publicRooms', getPublicRooms());
+              return;
+            }
+          }
 
           const lastBotIdx = room.players.map((p: any) => p.isBot).lastIndexOf(true);
           if (lastBotIdx !== -1) {
@@ -187,6 +205,7 @@ function socketServerPlugin(): Plugin {
               host: socket.id,
               players: [{ id: socket.id, name: playerName || 'Player 1', avatar: avatar, isReady: true, isHost: true, isBot: false }],
               maxPlayers: 4,
+              mode: 'nomercy',
               special: true,
               pointIndex: 0,
               themeIndex: 0,
@@ -219,12 +238,14 @@ function socketServerPlugin(): Plugin {
           const room = rooms.get(data.roomId);
           if (!room || room.host !== socket.id) return;
           if (data.maxPlayers) room.maxPlayers = Number(data.maxPlayers);
+          if (data.mode) room.mode = data.mode;
           if (data.special !== undefined) room.special = data.special;
           if (data.pointIndex !== undefined) room.pointIndex = data.pointIndex;
           if (data.themeIndex !== undefined) room.themeIndex = data.themeIndex;
 
           io.to(data.roomId).emit('roomOptions', {
             maxPlayers: room.maxPlayers,
+            mode: room.mode,
             special: room.special,
             pointIndex: room.pointIndex,
             themeIndex: room.themeIndex
@@ -250,9 +271,14 @@ function socketServerPlugin(): Plugin {
           const room = rooms.get(data.roomId);
           if (!room) return;
 
-          if (data.action === 'start') {
+          if (data.action === 'start' || data.action === 'startgame') {
             room.isPlaying = true;
             io.emit('publicRooms', getPublicRooms());
+            startServerGameSession(data.roomId, io, room);
+          }
+
+          if (data.type && data.type.startsWith('player_')) {
+            handleClientGameMessage(io, socket, rooms, data);
           }
 
           // Relay action to everyone in the room (or excluding sender if broadcast is false)
@@ -261,6 +287,14 @@ function socketServerPlugin(): Plugin {
           } else {
             socket.to(data.roomId).emit('gameAction', data);
           }
+        });
+
+        socket.on('playerAction', (data: any = {}) => {
+          handleClientGameMessage(io, socket, rooms, data);
+        });
+
+        socket.on('player_action_done', (data: any = {}) => {
+          handleClientGameMessage(io, socket, rooms, { type: 'player_action_done', ...data });
         });
 
         // LEAVE ROOM
@@ -277,6 +311,7 @@ function socketServerPlugin(): Plugin {
             socket.leave(roomId);
 
             if (room.players.filter((p: any) => !p.isBot).length === 0) {
+              removeServerGameSession(roomId);
               rooms.delete(roomId);
             } else {
               if (wasHost && room.players.length > 0) {
@@ -301,6 +336,7 @@ function socketServerPlugin(): Plugin {
               const wasHost = room.players[playerIndex].isHost;
               room.players.splice(playerIndex, 1);
               if (room.players.filter((p: any) => !p.isBot).length === 0) {
+                removeServerGameSession(roomId);
                 rooms.delete(roomId);
               } else {
                 if (wasHost && room.players.length > 0) {

@@ -67,25 +67,107 @@ resize:vertical;
 
 }
 
-html{-webkit-tap-highlight-color: rgba(0,0,0,0);-webkit-user-select: none;-webkit-touch-callout:none; background:#0e6bdd; background: url(../assets/background_p.png); background-size: cover; }
+html {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  background: #081224;
+  background: radial-gradient(circle at 50% 50%, #162f55 0%, #0a172c 60%, #040914 100%);
+  background-size: cover;
+  background-attachment: fixed;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'bpreplaybold', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: transparent;
+}
 
 /*-- Percent Loader -- */
-#mainLoader{position:absolute;z-index:5; display:none; font-size:35px; line-height:35px; color:#fff; text-align:center; width:100%; font-family:'bpreplaybold';}
+#mainLoader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 35px;
+  color: #fff;
+  text-align: center;
+  font-family: 'bpreplaybold', sans-serif;
+  background: rgba(8, 18, 36, 0.9);
+  padding: 24px 36px;
+  border-radius: 20px;
+  border: 2px solid rgba(241, 196, 15, 0.4);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
+}
+
+#mainLoader img {
+  animation: spinLoader 2s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spinLoader {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 /*-- Content Wrapper -- */
-#mainHolder{position:absolute; width:100%;height:100%;}
+#mainHolder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /*-- Browser Not Support -- */
-#notSupportHolder{ width:90%; margin:5% auto; position:relative; color:#fff; text-align:center; font-size:35px; font-family:'bpreplaybold'; display:none;}
-.notSupport{margin-top:200px;}
-
-@-moz-keyframes spin { 50% { -moz-transform: rotate(0deg); } 100% { -moz-transform: rotate(0deg); } }
-@-webkit-keyframes spin { 50% { -webkit-transform: rotate(90deg); } 100% { -webkit-transform: rotate(0deg); } }
-@keyframes spin { 50% { -webkit-transform: rotate(90deg); transform:rotate(90deg); } 100% { -webkit-transform: rotate(90deg); transform:rotate(90deg); } }
+#notSupportHolder {
+  width: 90%;
+  margin: 5% auto;
+  position: relative;
+  color: #fff;
+  text-align: center;
+  font-size: 28px;
+  font-family: 'bpreplaybold';
+  display: none;
+}
+.notSupport { margin-top: 200px; }
 
 /*-- Canvas Wrapper -- */
-#canvasHolder{ display:none; width:100%; max-width:1280px; height:100%; margin:auto; position:relative;}
-canvas{ position:fixed;}
+#canvasHolder {
+  display: none;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+canvas {
+  position: fixed;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
 
 /*-- Form Wrapper -- */
 #editWrapper{ display:none;}

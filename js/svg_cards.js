@@ -1,213 +1,353 @@
-/**
- * Modular SVG Card Loader and Renderer
- * Loads individual, standalone SVG card asset files from assets/svg/
- * No hardcoded SVGs in JS - all graphics are separate SVG files.
+/*!
+ * SVGCards - Ultra-Clean High-Definition UNO & Four Colors Card Canvas Renderer
+ * Generates crisp 200x300 canvas surfaces for all classic, action, and special cards.
  */
+(function() {
+  'use strict';
 
-var SVGCards = (function() {
-	var canvasCache = {};
-	var imgCache = {};
+  var COLOR_PALETTES = {
+    red: { bgTop: '#ff4d4d', bgBottom: '#c0292b', accent: '#ff7675', border: '#ffffff' },
+    blue: { bgTop: '#2980b9', bgBottom: '#1a5276', accent: '#54a0ff', border: '#ffffff' },
+    green: { bgTop: '#27ae60', bgBottom: '#1e8449', accent: '#2ecc71', border: '#ffffff' },
+    yellow: { bgTop: '#f1c40f', bgBottom: '#d4ac0d', accent: '#f9ca24', border: '#ffffff' },
+    purple: { bgTop: '#8e44ad', bgBottom: '#5b2c6f', accent: '#9b59b6', border: '#ffffff' },
+    pink: { bgTop: '#e84393', bgBottom: '#ad1457', accent: '#fd79a8', border: '#ffffff' },
+    teal: { bgTop: '#00cec9', bgBottom: '#00838f', accent: '#81ecec', border: '#ffffff' },
+    orange: { bgTop: '#e67e22', bgBottom: '#d35400', accent: '#f39c12', border: '#ffffff' },
+    wild: { bgTop: '#2d3436', bgBottom: '#1e272e', accent: '#636e72', border: '#f1c40f' }
+  };
 
-	var colorPalette = {
-		red: { main: '#ff2d55', dark: '#b30024', light: '#ff6b8b' },
-		blue: { main: '#007aff', dark: '#004db3', light: '#4da3ff' },
-		green: { main: '#34c759', dark: '#1e8238', light: '#6ddb89' },
-		yellow: { main: '#ffcc00', dark: '#b38f00', light: '#ffdc4d' },
-		pink: { main: '#ff2a85', dark: '#990045', light: '#ff70a6' },
-		teal: { main: '#00f0ff', dark: '#008b99', light: '#66f6ff' },
-		orange: { main: '#ff6b00', dark: '#b34700', light: '#ff994d' },
-		purple: { main: '#9d4edd', dark: '#5a189a', light: '#c77dff' },
-		wild: { main: '#ffffff', dark: '#111119', light: '#ffffff' },
-		darkwild: { main: '#ffffff', dark: '#06060a', light: '#ffffff' }
-	};
+  var cardCache = {};
 
-	/**
-	 * Resolves the relative path to the standalone SVG file for any card
-	 */
-	function getCardSVGPath(cardType, cardColor, cardValue) {
-		var type = String(cardType || 'number').toLowerCase();
-		var color = (cardColor && colorPalette[cardColor]) ? cardColor.toLowerCase() : '';
-		var val = cardValue !== undefined ? cardValue : '';
+  function drawRoundedRect(ctx, x, y, width, height, radius) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }
 
-		// 1. Specials
-		var specials = [
-			'truesight', 'oneforme', 'devildeal', 'charity',
-			'targeteddraw2', 'targeteddraw4', 'eliminatedplayer', 'frozencolor'
-		];
-		if (specials.indexOf(type) !== -1 && (!color || color === 'wild')) {
-			return 'assets/svg/card_special_' + type + '.svg';
-		}
+  function getCardCanvas(cardType, cardColor, cardValue) {
+    var type = String(cardType || 'number').toLowerCase();
+    var color = String(cardColor || '').toLowerCase();
+    if (!color || color === 'undefined' || color === 'null' || type.startsWith('wild') || type === 'wild') {
+      color = 'wild';
+    }
+    var val = cardValue !== undefined && cardValue !== null ? String(cardValue) : '';
+    var cacheKey = type + '_' + color + '_' + val;
 
-		// 2. Wilds
-		var wilds = [
-			'wild', 'darkwild', 'wilddraw4', 'wilddraw', 'wilddraw2', 'wilddraw6',
-			'wilddraw10', 'wildreversdraw4', 'wildcolorroulette', 'wilddrawcolor',
-			'wildattack', 'wildswap', 'wildreverse', 'wildskip', 'wildskipeveryone',
-			'wildtargeteddraw2', 'flexdraw4', 'flexwildalldraw'
-		];
-		if (wilds.indexOf(type) !== -1) {
-			var wName = (type === 'wilddraw') ? 'wilddraw4' : type;
-			return 'assets/svg/card_' + wName + '.svg';
-		}
+    if (cardCache[cacheKey]) {
+      return cardCache[cacheKey];
+    }
 
-		// 3. Numbers
-		if (type === 'number' || (!isNaN(Number(type)) && type.trim() !== '')) {
-			var numVal = (val !== '' && val !== undefined) ? val : type;
-			var colName = color || 'red';
-			return 'assets/svg/card_' + colName + '_' + numVal + '.svg';
-		}
+    var canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 300;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return canvas;
 
-		// 4. Color Actions (draw2, draw4, draw1, draw5, skip, reverse, discardall, skipeveryone, flip, hit2, flexnumber, flexdraw2, flexskip)
-		var colName = color || 'red';
-		var actName = (type === 'draw') ? 'draw2' : type;
-		return 'assets/svg/card_' + colName + '_' + actName + '.svg';
-	}
+    renderCard(ctx, type, color, val, 200, 300);
+    cardCache[cacheKey] = canvas;
+    return canvas;
+  }
 
-	/**
-	 * Loads or retrieves a cached HTML Image element for an SVG path
-	 */
-	function getLoadedImage(svgPath, onLoadCallback) {
-		if (imgCache[svgPath] && imgCache[svgPath].complete) {
-			if (typeof onLoadCallback === 'function') {
-				onLoadCallback(imgCache[svgPath]);
-			}
-			return imgCache[svgPath];
-		}
+  function renderCard(ctx, type, color, val, w, h) {
+    ctx.save();
+    ctx.clearRect(0, 0, w, h);
 
-		if (!imgCache[svgPath]) {
-			var img = new Image();
-			img.src = svgPath;
-			imgCache[svgPath] = img;
-		}
+    var palette = COLOR_PALETTES[color] || COLOR_PALETTES.wild;
+    var isWild = color === 'wild' || type.startsWith('wild') || type === 'wild';
 
-		var img = imgCache[svgPath];
-		var prevOnload = img.onload;
-		img.onload = function() {
-			if (typeof prevOnload === 'function') prevOnload();
-			if (typeof onLoadCallback === 'function') onLoadCallback(img);
-		};
+    // 1. Base card shadow / outer boundary
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetY = 4;
+    drawRoundedRect(ctx, 4, 4, w - 8, h - 8, 18);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
 
-		return img;
-	}
+    // 2. Card background gradient
+    var bgGrad = ctx.createLinearGradient(0, 0, w, h);
+    bgGrad.addColorStop(0, palette.bgTop);
+    bgGrad.addColorStop(1, palette.bgBottom);
+    drawRoundedRect(ctx, 9, 9, w - 18, h - 18, 14);
+    ctx.fillStyle = bgGrad;
+    ctx.fill();
 
-	/**
-	 * Returns an HTML5 Canvas containing the rendered standalone SVG card
-	 */
-	function getCardCanvas(cardType, cardColor, cardValue) {
-		var key = (cardType || 'number') + '_' + (cardColor || 'wild') + '_' + (cardValue !== undefined ? cardValue : '');
-		if (canvasCache[key]) {
-			return canvasCache[key];
-		}
+    // 3. Inner Gloss / Reflection Arc
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(w / 2, -20, w * 0.7, h * 0.4, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.fill();
+    ctx.restore();
 
-		var canvas = document.createElement('canvas');
-		canvas.width = 200;
-		canvas.height = 300;
-		var ctx = canvas.getContext('2d');
+    // 4. Center Oval / Emblem
+    var centerX = w / 2;
+    var centerY = h / 2;
 
-		var svgPath = getCardSVGPath(cardType, cardColor, cardValue);
-		getLoadedImage(svgPath, function(img) {
-			ctx.clearRect(0, 0, 200, 300);
-			ctx.drawImage(img, 0, 0, 200, 300);
-			if (typeof stage !== 'undefined' && stage && stage.update) {
-				stage.update();
-			}
-		});
+    if (isWild) {
+      // 4-Quadrant Wild Oval
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(-22 * Math.PI / 180);
 
-		canvasCache[key] = canvas;
-		return canvas;
-	}
+      // Black background for center oval
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 68, 98, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#111111';
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
 
-	/**
-	 * Card Cover (Back) Canvas
-	 */
-	function getCardCoverCanvas(isDark) {
-		var key = 'cover_' + (isDark ? 'dark' : 'classic');
-		if (canvasCache[key]) {
-			return canvasCache[key];
-		}
+      // Draw 4 colorful slices
+      var rX = 64;
+      var rY = 94;
+      var wildColors = ['#ff4d4d', '#2980b9', '#27ae60', '#f1c40f']; // Red, Blue, Green, Yellow
 
-		var canvas = document.createElement('canvas');
-		canvas.width = 200;
-		canvas.height = 300;
-		var ctx = canvas.getContext('2d');
+      // Top-Left (Red)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-rX, -rY, rX, rY);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
+      ctx.fillStyle = wildColors[0];
+      ctx.fill();
+      ctx.restore();
 
-		var svgPath = isDark ? 'assets/svg/card_cover_dark.svg' : 'assets/svg/card_cover_light.svg';
-		getLoadedImage(svgPath, function(img) {
-			ctx.clearRect(0, 0, 200, 300);
-			ctx.drawImage(img, 0, 0, 200, 300);
-			if (typeof stage !== 'undefined' && stage && stage.update) {
-				stage.update();
-			}
-		});
+      // Top-Right (Blue)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, -rY, rX, rY);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
+      ctx.fillStyle = wildColors[1];
+      ctx.fill();
+      ctx.restore();
 
-		canvasCache[key] = canvas;
-		return canvas;
-	}
+      // Bottom-Left (Yellow)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-rX, 0, rX, rY);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
+      ctx.fillStyle = wildColors[3];
+      ctx.fill();
+      ctx.restore();
 
-	/**
-	 * Highlight Canvas
-	 */
-	function getHighlightCanvas() {
-		var key = 'overlay_highlight';
-		if (canvasCache[key]) {
-			return canvasCache[key];
-		}
+      // Bottom-Right (Green)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, rX, rY);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
+      ctx.fillStyle = wildColors[2];
+      ctx.fill();
+      ctx.restore();
 
-		var canvas = document.createElement('canvas');
-		canvas.width = 200;
-		canvas.height = 300;
-		var ctx = canvas.getContext('2d');
+      ctx.restore();
+    } else {
+      // Classic White Rotated Ellipse
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(-25 * Math.PI / 180);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 64, 96, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.restore();
+    }
 
-		var svgPath = 'assets/svg/card_highlight.svg';
-		getLoadedImage(svgPath, function(img) {
-			ctx.clearRect(0, 0, 200, 300);
-			ctx.drawImage(img, 0, 0, 200, 300);
-			if (typeof stage !== 'undefined' && stage && stage.update) {
-				stage.update();
-			}
-		});
+    // 5. Draw Center Symbol & Corner Indicators
+    var symbol = getSymbolForType(type, val);
+    renderCardSymbols(ctx, type, color, val, symbol, w, h, isWild, palette);
 
-		canvasCache[key] = canvas;
-		return canvas;
-	}
+    ctx.restore();
+  }
 
-	/**
-	 * Eliminated Overlay Canvas
-	 */
-	function getEliminatedCanvas() {
-		var key = 'overlay_eliminated';
-		if (canvasCache[key]) {
-			return canvasCache[key];
-		}
+  function getSymbolForType(type, val) {
+    if (type === 'number' || (!isNaN(parseInt(val, 10)) && val !== '')) {
+      return val || '0';
+    }
+    switch (type) {
+      case 'draw1': return '+1';
+      case 'draw2': case 'flexdraw2': return '+2';
+      case 'draw3': return '+3';
+      case 'draw4': return '+4';
+      case 'draw5': return '+5';
+      case 'skip': case 'flexskip': return '⊘';
+      case 'skipeveryone': case 'wildskipeveryone': return '⊘⊘';
+      case 'reverse': case 'wildreverse': return '⇄';
+      case 'discardall': return '🗑';
+      case 'flip': return '🌓';
+      case 'hit2': return '💥2';
+      case 'attack': case 'wildattack': return '⚔️';
+      case 'wild': return 'WILD';
+      case 'wilddraw2': return '+2';
+      case 'wilddraw4': case 'wildreversdraw4': return '+4';
+      case 'wilddraw6': return '+6';
+      case 'wilddraw10': return '+10';
+      case 'wildcolorroulette': return '🎡';
+      case 'wildswap': case 'swap': return '🤝';
+      case 'wildtruesight': case 'truesight': return '👁️';
+      case 'charity': return '🎁';
+      case 'devildeal': return '😈';
+      case 'frozencolor': return '❄️';
+      case 'oneforme': return '⭐';
+      case 'targeteddraw2': case 'wildtargeteddraw2': return '🎯+2';
+      case 'targeteddraw4': return '🎯+4';
+      case 'eliminatedplayer': return '💀';
+      default: return val || type.toUpperCase();
+    }
+  }
 
-		var canvas = document.createElement('canvas');
-		canvas.width = 200;
-		canvas.height = 300;
-		var ctx = canvas.getContext('2d');
+  function renderCardSymbols(ctx, type, color, val, symbol, w, h, isWild, palette) {
+    var centerX = w / 2;
+    var centerY = h / 2;
 
-		var svgPath = 'assets/svg/card_eliminated.svg';
-		getLoadedImage(svgPath, function(img) {
-			ctx.clearRect(0, 0, 200, 300);
-			ctx.drawImage(img, 0, 0, 200, 300);
-			if (typeof stage !== 'undefined' && stage && stage.update) {
-				stage.update();
-			}
-		});
+    // Corner font and Center font
+    var isNumber = (type === 'number' || (!isNaN(parseInt(symbol, 10)) && symbol.length <= 2));
+    var isDrawPlus = symbol.startsWith('+') || symbol.startsWith('🎯+');
 
-		canvasCache[key] = canvas;
-		return canvas;
-	}
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-	return {
-		getCardSVGPath: getCardSVGPath,
-		getCardCanvas: getCardCanvas,
-		getCardCoverCanvas: getCardCoverCanvas,
-		getHighlightCanvas: getHighlightCanvas,
-		getEliminatedCanvas: getEliminatedCanvas,
-		colorPalette: colorPalette
-	};
+    // --- CENTER ART / TEXT ---
+    if (isWild && symbol === 'WILD') {
+      // Classic WILD Text in center with stroke
+      ctx.save();
+      ctx.font = '900 28px "Arial Black", Impact, sans-serif';
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#000000';
+      ctx.strokeText('WILD', centerX, centerY);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('WILD', centerX, centerY);
+      ctx.restore();
+    } else if (isNumber) {
+      ctx.save();
+      ctx.font = '900 84px "Arial Black", Impact, sans-serif';
+      ctx.fillStyle = palette.bgBottom;
+      // Shadow & Drop
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 3;
+      ctx.fillText(symbol, centerX, centerY + 4);
+      ctx.restore();
+    } else if (isDrawPlus) {
+      ctx.save();
+      var fontSize = symbol.length > 3 ? 46 : (symbol.length === 3 ? 56 : 68);
+      ctx.font = '900 ' + fontSize + 'px "Arial Black", Impact, sans-serif';
+      if (isWild) {
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = '#000000';
+        ctx.strokeText(symbol, centerX, centerY + 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(symbol, centerX, centerY + 2);
+      } else {
+        ctx.fillStyle = palette.bgBottom;
+        ctx.fillText(symbol, centerX, centerY + 2);
+      }
+      ctx.restore();
+    } else if (type === 'skip' || type === 'flexskip') {
+      // Draw crisp vectorized Skip sign in center
+      ctx.save();
+      ctx.strokeStyle = palette.bgBottom;
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 38, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(centerX - 26, centerY - 26);
+      ctx.lineTo(centerX + 26, centerY + 26);
+      ctx.stroke();
+      ctx.restore();
+    } else if (type === 'reverse' || type === 'wildreverse') {
+      // Draw crisp Reverse arrows in center
+      ctx.save();
+      ctx.font = '900 70px "Arial Black", Impact, sans-serif';
+      if (isWild) {
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#000000';
+        ctx.strokeText('⇄', centerX, centerY);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('⇄', centerX, centerY);
+      } else {
+        ctx.fillStyle = palette.bgBottom;
+        ctx.fillText('⇄', centerX, centerY);
+      }
+      ctx.restore();
+    } else {
+      // Generic / Emoji / Action symbol in center
+      ctx.save();
+      var fSize = symbol.length > 4 ? 24 : (symbol.length > 2 ? 38 : 52);
+      ctx.font = 'bold ' + fSize + 'px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+      if (isWild) {
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+      } else {
+        ctx.fillStyle = palette.bgBottom;
+      }
+      ctx.fillText(symbol, centerX, centerY);
+      ctx.restore();
+    }
+
+    // --- CORNER ICONS (Top-Left & Bottom-Right) ---
+    var cornerSymbol = symbol;
+    if (cornerSymbol === 'WILD') cornerSymbol = '★';
+
+    // Top-Left Corner
+    ctx.save();
+    ctx.translate(28, 30);
+    renderCornerIndicator(ctx, cornerSymbol, isWild, palette);
+    ctx.restore();
+
+    // Bottom-Right Corner (Rotated 180 deg)
+    ctx.save();
+    ctx.translate(w - 28, h - 30);
+    ctx.rotate(Math.PI);
+    renderCornerIndicator(ctx, cornerSymbol, isWild, palette);
+    ctx.restore();
+  }
+
+  function renderCornerIndicator(ctx, sym, isWild, palette) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    var isShort = sym.length <= 2;
+    var fontSize = isShort ? 24 : (sym.length === 3 ? 18 : 14);
+    ctx.font = '900 ' + fontSize + 'px "Arial Black", Impact, sans-serif';
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.fillText(sym, 1, 2);
+
+    // Text with white border
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000000';
+    ctx.strokeText(sym, 0, 0);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(sym, 0, 0);
+  }
+
+  // Export globally
+  window.SVGCards = {
+    getCardCanvas: getCardCanvas,
+    renderCard: renderCard
+  };
+
 })();
-
-if (typeof window !== 'undefined') {
-	window.SVGCards = SVGCards;
-}

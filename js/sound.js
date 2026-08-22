@@ -14,24 +14,34 @@ var soundPushArr = [];
 var soundLoopPushArr = [];
 var musicPushArr = [];
 
+var lastSoundPlayTimes = {};
+
 function playSound(soundName, vol){
-	if(soundOn){
+	if(soundOn && !soundMute){
+		var now = Date.now();
+		if (lastSoundPlayTimes[soundName] && (now - lastSoundPlayTimes[soundName] < 45)) {
+			return; // Debounce rapid duplicated sound calls
+		}
+		lastSoundPlayTimes[soundName] = now;
+
 		var thisSoundID = soundID;
 		soundPushArr.push(thisSoundID);
 		soundID++;
 
 		var defaultVol = vol == undefined ? 1 : vol;
 		$.sound[thisSoundID] = createjs.Sound.play(soundName);
-		$.sound[thisSoundID].defaultVol = defaultVol;
-		setSoundVolume(thisSoundID);
-		
-		$.sound[thisSoundID].removeAllEventListeners();
-		$.sound[thisSoundID].addEventListener ("complete", function() {
-			var removeSoundIndex = soundPushArr.indexOf(thisSoundID);
-			if(removeSoundIndex != -1){
-				soundPushArr.splice(removeSoundIndex, 1);
-			}
-		});
+		if ($.sound[thisSoundID]) {
+			$.sound[thisSoundID].defaultVol = defaultVol;
+			setSoundVolume(thisSoundID);
+			
+			$.sound[thisSoundID].removeAllEventListeners();
+			$.sound[thisSoundID].addEventListener ("complete", function() {
+				var removeSoundIndex = soundPushArr.indexOf(thisSoundID);
+				if(removeSoundIndex != -1){
+					soundPushArr.splice(removeSoundIndex, 1);
+				}
+			});
+		}
 	}
 }
 
