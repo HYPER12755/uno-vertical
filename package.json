@@ -1,0 +1,20 @@
+{
+  "name": "four-colors",
+  "version": "1.0.0",
+  "description": "Four Colors HTML5 Game",
+  "main": "server.js",
+  "scripts": {
+    "dev": "vite --port 3000 --host 0.0.0.0",
+    "start": "vite --port 3000 --host 0.0.0.0",
+    "build": "vite build && cp -r assets js *.js dist/ 2>/dev/null || true",
+    "preview": "vite preview --port 3000 --host 0.0.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  }
+}

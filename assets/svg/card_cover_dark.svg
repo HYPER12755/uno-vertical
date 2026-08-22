@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <defs>
+    <linearGradient id="cover_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#140224" />
+      <stop offset="50%" stop-color="#330847" />
+      <stop offset="100%" stop-color="#140224" />
+    </linearGradient>
+    <linearGradient id="cover_oval" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9d4edd" />
+      <stop offset="100%" stop-color="#ff2a85" />
+    </linearGradient>
+    <filter id="cover_shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.9" />
+    </filter>
+  </defs>
+  <rect x="2" y="2" width="196" height="296" rx="16" ry="16" fill="url(#cover_bg)" stroke="#00f0ff" stroke-width="3.5" />
+  <rect x="7" y="7" width="186" height="286" rx="12" ry="12" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.4" />
+  <ellipse cx="100" cy="150" rx="72" ry="105" transform="rotate(-28 100 150)" fill="url(#cover_oval)" stroke="#ffffff" stroke-width="3" filter="url(#cover_shadow)" />
+  <g filter="url(#cover_shadow)" transform="translate(100, 150) rotate(-22)">
+    <text x="0" y="16" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="38" text-anchor="middle" fill="#ffea00" stroke="#d50000" stroke-width="3.5" letter-spacing="1">UNO FLIP!</text>
+  </g>
+</svg>

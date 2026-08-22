@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+	<defs>
+		<linearGradient id="bg_dared" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#200508" />
+			<stop offset="100%" stop-color="#3a090e" />
+		</linearGradient>
+		<linearGradient id="oval_dared" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#ff4d5e" />
+			<stop offset="100%" stop-color="#d6001c" />
+		</linearGradient>
+		<filter id="shadow_dared" x="-10%" y="-10%" width="120%" height="120%">
+			<feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.8" />
+		</filter>
+	</defs>
+	<!-- Card Outer Shape -->
+	<rect x="2" y="2" width="196" height="296" rx="16" ry="16" fill="url(#bg_dared)" stroke="#ff3344" stroke-width="3.5" />
+	<rect x="7" y="7" width="186" height="286" rx="12" ry="12" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.5" />
+	<rect x="11" y="11" width="178" height="278" rx="9" ry="9" fill="none" stroke="#ff3344" stroke-width="1" stroke-opacity="0.3" />
+	<!-- Center Oval -->
+	<ellipse cx="100" cy="150" rx="70" ry="105" transform="rotate(-28 100 150)" fill="url(#oval_dared)" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.85" filter="url(#shadow_dared)" />
+	<!-- Corner Pips -->
+	<text x="14" y="32" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="22" text-anchor="left" fill="#ffffff" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">⬇</text>
+	<g transform="translate(186, 268) rotate(180)">
+		<text x="0" y="0" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="22" text-anchor="left" fill="#ffffff" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">⬇</text>
+	</g>
+	<!-- Central Artwork -->
+	<g filter="url(#shadow_dared)">
+		<g transform="translate(100, 118)">
+			<rect x="-14" y="-22" width="28" height="40" rx="3" fill="#ffffff" opacity="0.5" transform="rotate(-20)" />
+			<rect x="-14" y="-22" width="28" height="40" rx="3" fill="#ffffff" opacity="0.75" transform="rotate(20)" />
+			<rect x="-14" y="-22" width="28" height="40" rx="3" fill="#ffffff" stroke="#b30018" stroke-width="1.5" />
+			<path d="M 0 -8 L 0 8 M -6 2 L 0 8 L 6 2" stroke="#b30018" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+		</g>
+		<rect x="25" y="156" width="150" height="28" rx="6" fill="#ffffff" />
+		<text x="100" y="175" font-family="'Arial Black', sans-serif" font-weight="900" font-size="12.5" text-anchor="middle" fill="#b30018" letter-spacing="1">DISCARD ALL</text>
+	</g>
+</svg>

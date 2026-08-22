@@ -1,0 +1,945 @@
+/* ==========================================================================
+   Four Colors: Show 'Em No Mercy - Premium Game UI & Modern Design System
+   Ultra-sleek Glassmorphic Dark Theme with Vibrant Neon Card Accents
+   ========================================================================== */
+
+:root {
+  --fc-gold: #f1c40f;
+  --fc-gold-glow: rgba(241, 196, 15, 0.45);
+  --fc-primary: #0070ec;
+  --fc-accent-red: #ff2d55;
+  --fc-accent-yellow: #ffcc00;
+  --fc-accent-green: #34c759;
+  --fc-accent-blue: #007aff;
+  --fc-accent-purple: #9d4edd;
+  --fc-bg-dark: rgba(10, 20, 38, 0.85);
+  --fc-bg-panel: rgba(16, 32, 60, 0.75);
+  --fc-glass-border: rgba(255, 255, 255, 0.18);
+  --fc-text-light: #ffffff;
+  --fc-text-dim: rgba(255, 255, 255, 0.75);
+  --fc-font-family: 'bpreplaybold', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Base UI Overlay Container */
+#fc-ui-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none !important;
+  z-index: 50;
+  font-family: var(--fc-font-family);
+  overflow: hidden;
+  user-select: none;
+}
+
+#fc-ui-layer * {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   TOP NAVIGATION BAR (Ultra Clean, Glassmorphic, Floating)
+   ========================================================================== */
+.fc-top-bar,
+.fc-topbar {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 60;
+  pointer-events: auto;
+  gap: 12px;
+}
+
+.fc-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(8, 18, 36, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 6px 16px 6px 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fc-brand:hover {
+  transform: translateY(-2px);
+  border-color: var(--fc-gold);
+  box-shadow: 0 10px 36px rgba(241, 196, 15, 0.3);
+}
+
+.fc-logo-icon {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+}
+
+.fc-logo-text {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  background: linear-gradient(90deg, #ff2d55, #ffcc00, #34c759, #007aff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.fc-top-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 18, 36, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  padding: 4px 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.fc-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #fff;
+  border-radius: 9999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fc-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.fc-nav-btn.active {
+  background: linear-gradient(135deg, #ff8c00, #e65100);
+  border-color: #ffd166;
+  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.4);
+}
+
+.fc-user-pill,
+.fc-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(8, 18, 36, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(241, 196, 15, 0.6);
+  border-radius: 9999px;
+  padding: 4px 14px 4px 6px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.fc-user-pill:hover,
+.fc-profile-btn:hover {
+  background: rgba(16, 32, 60, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 36px rgba(241, 196, 15, 0.35);
+}
+
+.fc-avatar-icon,
+.fc-avatar-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2c3e50, #1a252f);
+  border: 2px solid var(--fc-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.fc-user-info,
+.fc-profile-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.fc-user-name,
+.fc-profile-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.fc-user-level,
+.fc-profile-stats {
+  color: var(--fc-gold);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   MODALS & BACKDROPS (Luxury Glassmorphism, Crisp Elevation)
+   ========================================================================== */
+.fc-modal-overlay,
+.fc-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(4, 12, 24, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: fc-fade-in 0.22s ease-out forwards;
+}
+
+.fc-modal-content,
+.fc-modal {
+  background: linear-gradient(160deg, #102648 0%, #08162c 100%);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #fff;
+  animation: fc-pop-in 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+  pointer-events: auto;
+}
+
+@keyframes fc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fc-pop-in {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.fc-modal-header {
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fc-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.fc-modal-close {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.fc-modal-close:hover {
+  background: rgba(255, 45, 85, 0.85);
+  border-color: #ff2d55;
+  transform: rotate(90deg) scale(1.1);
+}
+
+.fc-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ==========================================================================
+   BUTTON SYSTEM (Tactile 3D Gaming Controls)
+   ========================================================================== */
+.fc-btn {
+  background: linear-gradient(180deg, #ff8c00 0%, #e65100 100%);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 0 #b33900, 0 8px 20px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.fc-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #b33900, 0 12px 26px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, #ffa726 0%, #f57c00 100%);
+}
+
+.fc-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #b33900, 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.fc-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.fc-btn-green {
+  background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%);
+  box-shadow: 0 4px 0 #1e8449, 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.fc-btn-green:hover:not(:disabled) {
+  background: linear-gradient(180deg, #48c774 0%, #2ecc71 100%);
+  box-shadow: 0 6px 0 #1e8449, 0 12px 26px rgba(0, 0, 0, 0.45);
+}
+.fc-btn-green:active:not(:disabled) {
+  box-shadow: 0 2px 0 #1e8449;
+}
+
+.fc-btn-blue {
+  background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
+  box-shadow: 0 4px 0 #1b4f72, 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.fc-btn-gold {
+  background: linear-gradient(180deg, #f1c40f 0%, #d4ac0d 100%);
+  color: #111;
+  text-shadow: none;
+  box-shadow: 0 4px 0 #9a7d0a, 0 8px 20px rgba(0, 0, 0, 0.35);
+  border-color: #fff275;
+}
+.fc-btn-gold:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f9e79f 0%, #f1c40f 100%);
+  box-shadow: 0 6px 0 #9a7d0a, 0 12px 26px rgba(0, 0, 0, 0.45);
+}
+.fc-btn-gold:active:not(:disabled) {
+  box-shadow: 0 2px 0 #9a7d0a;
+}
+
+.fc-btn-secondary {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.fc-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+.fc-btn-small {
+  padding: 8px 14px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.fc-btn-full {
+  width: 100%;
+}
+
+.fc-modal-back-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fc-modal-back-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: #fff;
+}
+
+/* ==========================================================================
+   HUB & MODE SELECTOR CARDS
+   ========================================================================== */
+.fc-hub-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fc-hub-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fc-hub-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--fc-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.fc-hub-card-local {
+  background: linear-gradient(135deg, rgba(241, 196, 15, 0.18), rgba(0, 0, 0, 0.4));
+  border-color: rgba(241, 196, 15, 0.45);
+}
+
+.fc-hub-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.fc-hub-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.fc-hub-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.fc-hub-desc {
+  font-size: 12px;
+  color: var(--fc-text-dim);
+  margin-top: 2px;
+}
+
+/* Mode Grid */
+.fc-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.fc-mode-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.fc-mode-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.fc-mode-card.active {
+  background: linear-gradient(135deg, rgba(230, 81, 0, 0.45), rgba(241, 196, 15, 0.3));
+  border: 2px solid var(--fc-gold);
+  box-shadow: 0 0 14px rgba(241, 196, 15, 0.35);
+}
+
+.fc-mode-icon {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fc-mode-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-mode-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-mode-badge-tag {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.fc-mode-desc {
+  font-size: 10px;
+  color: var(--fc-text-dim);
+  line-height: 1.2;
+}
+
+/* Segmented Controls & Form Inputs */
+.fc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fc-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--fc-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.fc-segmented {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.fc-seg-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fc-text-dim);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.fc-seg-btn.active {
+  background: linear-gradient(180deg, #ff8c00, #e65100);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.fc-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.fc-input:focus {
+  border-color: var(--fc-gold);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 14px rgba(241, 196, 15, 0.3);
+}
+
+.fc-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.fc-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fc-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2ecc71;
+}
+
+/* Player Slots in Lobby */
+.fc-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.fc-player-slot {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fc-player-slot.filled {
+  border-color: rgba(46, 204, 113, 0.6);
+  background: rgba(46, 204, 113, 0.12);
+}
+
+.fc-player-slot.empty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.2);
+  justify-content: center;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 4px;
+  color: var(--fc-text-dim);
+}
+
+.fc-slot-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border: 2px solid #fff;
+  flex-shrink: 0;
+}
+
+.fc-slot-name {
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.fc-slot-status {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--fc-gold);
+}
+
+/* ==========================================================================
+   FLOATING IN-GAME HUD & TOAST NOTIFICATIONS
+   ========================================================================== */
+.fc-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: rgba(10, 24, 48, 0.95);
+  border: 2px solid var(--fc-gold);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fc-toast-in 0.25s ease-out;
+  pointer-events: none;
+}
+
+.fc-toast.fc-toast-out {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+  transition: all 0.3s ease;
+}
+
+@keyframes fc-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* In-Game Floating Dock (Reactions & UNO Callout) */
+#fc-game-reaction-ui {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  pointer-events: auto;
+}
+
+.fc-reaction-dock {
+  background: rgba(8, 18, 36, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.fc-reaction-dock button {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.fc-reaction-dock button:hover {
+  transform: scale(1.3) translateY(-4px);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+}
+
+/* Call 4 Colors Warning Button */
+.fc-call-uno-btn {
+  background: linear-gradient(135deg, #ff2d55, #ff6b8b);
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  color: #fff;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(255, 45, 85, 0.6);
+  animation: fc-pulse-call 1s infinite alternate;
+}
+
+@keyframes fc-pulse-call {
+  from { transform: scale(1); box-shadow: 0 0 10px rgba(255, 45, 85, 0.4); }
+  to { transform: scale(1.08); box-shadow: 0 0 22px rgba(255, 45, 85, 0.8); }
+}
+
+/* Mobile responsive */
+@media (max-width: 650px) {
+  .fc-top-bar,
+  .fc-topbar {
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    gap: 6px;
+  }
+  .fc-brand {
+    padding: 4px 10px;
+  }
+  .fc-logo-text {
+    display: none;
+  }
+  .fc-top-nav {
+    padding: 2px 4px;
+    gap: 4px;
+  }
+  .fc-nav-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .fc-user-pill,
+  .fc-profile-btn {
+    padding: 3px 8px 3px 4px;
+  }
+  .fc-user-name,
+  .fc-profile-name {
+    font-size: 11px;
+  }
+  .fc-mode-grid {
+    grid-template-columns: 1fr;
+    max-height: 180px;
+  }
+  .fc-slots-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   HERO QUICK PLAY & JOIN DOCK (Main Menu Action Bar)
+   ========================================================================== */
+.fc-hero-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 65;
+  pointer-events: auto;
+  background: rgba(8, 18, 36, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  padding: 10px 18px;
+  border-radius: 9999px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 30px rgba(0, 112, 236, 0.2);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fc-hero-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-decoration: none;
+  color: #fff;
+}
+
+.fc-hero-btn-quick {
+  background: linear-gradient(135deg, #ff2d55, #f39c12);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 20px rgba(255, 45, 85, 0.4);
+}
+
+.fc-hero-btn-quick:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 8px 30px rgba(255, 45, 85, 0.65);
+}
+
+.fc-hero-btn-modes {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.fc-hero-btn-modes:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--fc-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(241, 196, 15, 0.25);
+}
+
+.fc-hero-btn-online {
+  background: linear-gradient(135deg, #0070ec, #00c6ff);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 112, 236, 0.35);
+}
+
+.fc-hero-btn-online:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 8px 30px rgba(0, 198, 255, 0.6);
+}
+
+.fc-hero-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.fc-hero-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.fc-hero-text strong {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.fc-hero-text small {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .fc-hero-bar {
+    bottom: 12px;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  .fc-hero-btn {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .fc-hero-text small {
+    display: none;
+  }
+  .fc-hero-text strong {
+    font-size: 12px;
+  }
+  .fc-hero-icon {
+    font-size: 16px;
+  }
+}
+

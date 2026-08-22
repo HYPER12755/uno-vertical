@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+	<defs>
+		<linearGradient id="bg_roulette" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#121218" />
+			<stop offset="100%" stop-color="#242433" />
+		</linearGradient>
+		<linearGradient id="gold_roulette" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#fff59d" />
+			<stop offset="50%" stop-color="#fbc02d" />
+			<stop offset="100%" stop-color="#f57f17" />
+		</linearGradient>
+		<filter id="shadow_roulette" x="-10%" y="-10%" width="120%" height="120%">
+			<feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.8" />
+		</filter>
+	</defs>
+	<!-- Card Outer Shape -->
+	<rect x="2" y="2" width="196" height="296" rx="16" ry="16" fill="url(#bg_roulette)" stroke="#ffea00" stroke-width="3.5" />
+	<rect x="7" y="7" width="186" height="286" rx="12" ry="12" fill="none" stroke="#00e5ff" stroke-width="1.2" stroke-opacity="0.5" />
+	<rect x="11" y="11" width="178" height="278" rx="9" ry="9" fill="none" stroke="#ff007f" stroke-width="1" stroke-opacity="0.3" />
+	<!-- Center Oval -->
+	<ellipse cx="100" cy="150" rx="72" ry="105" transform="rotate(-28 100 150)" fill="#1c1c28" stroke="#ffffff" stroke-width="2" stroke-opacity="0.3" filter="url(#shadow_roulette)" />
+	<!-- Corner Pips -->
+	<text x="14" y="32" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="20" text-anchor="left" fill="#ffea00" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">🎰</text>
+	<g transform="translate(186, 268) rotate(180)">
+		<text x="0" y="0" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="20" text-anchor="left" fill="#ffea00" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">🎰</text>
+	</g>
+	<!-- Central Artwork -->
+	<g filter="url(#shadow_roulette)">
+		<g transform="translate(100, 135)">
+			<path d="M 0 0 L 0 -45 A 45 45 0 0 1 45 0 Z" fill="#ff3344" stroke="#ffffff" stroke-width="1.5" />
+			<path d="M 0 0 L 45 0 A 45 45 0 0 1 0 45 Z" fill="#ffea00" stroke="#ffffff" stroke-width="1.5" />
+			<path d="M 0 0 L 0 45 A 45 45 0 0 1 -45 0 Z" fill="#00e676" stroke="#ffffff" stroke-width="1.5" />
+			<path d="M 0 0 L -45 0 A 45 45 0 0 1 0 -45 Z" fill="#00a8ff" stroke="#ffffff" stroke-width="1.5" />
+			<circle cx="0" cy="0" r="14" fill="url(#gold_roulette)" stroke="#222" stroke-width="2" />
+			<circle cx="0" cy="0" r="5" fill="#ffffff" />
+		</g>
+		<rect x="25" y="190" width="150" height="24" rx="6" fill="#212121" stroke="#fbc02d" stroke-width="1.5" />
+		<text x="100" y="207" font-family="'Arial Black', sans-serif" font-weight="900" font-size="11" text-anchor="middle" fill="#ffee58" letter-spacing="1">🎰 COLOR ROULETTE</text>
+	</g>
+</svg>
