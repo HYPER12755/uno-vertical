@@ -4,6 +4,7 @@
  * 
  */
 function buildCards(){
+	if(!cardsPlayContainer){ return; } // canvas not built yet (asset load race)
 	cardsPlayContainer.removeAllChildren();
 
 	gameData.actionArr = [];
@@ -219,6 +220,9 @@ function createCard(name, color){
 				gameData.turn.drawCardsCount = 0;
 				gameData.turn.loseTurn = true;
 				if ( typeof window.emitServerAction === 'function' && socketData.online) {
+					gameData.turn.animating = true;
+					clearTimeout(window.__drawAckTimer);
+					window.__drawAckTimer = setTimeout(function(){ gameData.turn.animating = false; }, 3000);
 					window.emitServerAction('player_stack_surrender', {});
 					return;
 				}
@@ -244,7 +248,12 @@ function createCard(name, color){
 			if(gameData.turn.drawCount < 1 && (gameData.turn.drawCard || !gameData.turn.played)){
 				gameData.turn.drawCount++;
 				if ( typeof window.emitServerAction === 'function' && socketData.online) {
-					gameData.turn.action = false;
+					// Authoritative mode: wait for server_card_drawn to apply the draw.
+					// Use animating (not action=false) so a silent server rejection can
+					// never leave clicks permanently dead - the failsafe self-heals.
+					gameData.turn.animating = true;
+					clearTimeout(window.__drawAckTimer);
+					window.__drawAckTimer = setTimeout(function(){ gameData.turn.animating = false; }, 3000);
 					window.emitServerAction('player_draw_card', {});
 					return;
 				}
@@ -275,7 +284,11 @@ function createCard(name, color){
 			if(canPlay){
 				if ( typeof window.emitServerAction === 'function' && isOnline) {
 					gameData.turn.action = false;
-					window.emitServerAction('player_play_card', { cardId: serverCardId, cardIndex: cardIdx, type: targetCard.cardType, color: targetCard.cardColor, value: targetCard.cardValue });
+					// NOTE: payload key is `cardType`, NOT `type`. emitServerAction spreads
+					// the payload into { roomId, type: <action>, ...data }, so a `type`
+					// field here would overwrite the action name and the server would
+					// silently ignore the play (only draw worked because its payload is {}).
+					window.emitServerAction('player_play_card', { cardId: serverCardId, cardIndex: cardIdx, cardType: targetCard.cardType, color: targetCard.cardColor, value: targetCard.cardValue });
 					return;
 				}
 				if ( typeof initSocket == 'function' && multiplayerSettings.enable && isOnline) {

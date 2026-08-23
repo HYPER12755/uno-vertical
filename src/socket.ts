@@ -47,12 +47,18 @@ window.currentActionToken = null;
 let pingInterval: ReturnType<typeof setInterval> | null = null;
 
 // Send action to Authoritative Game Server
-window.emitServerAction = (type: string, data: any = {}) => {
+ window.emitServerAction = (type: string, data: any = {}) => {
   if (!socket || !currentRoomId) return;
+  // Never let a payload field clobber the routing keys (roomId/type). A stray
+  // `type` in the payload used to overwrite the action name, so the server
+  // silently dropped player_play_card (only draw, whose payload is {}, worked).
+  const safe = { ...data };
+  delete (safe as any).type;
+  delete (safe as any).roomId;
   socket.emit('playerAction', {
     roomId: currentRoomId,
     type: type,
-    ...data
+    ...safe
   });
 };
 
@@ -459,6 +465,7 @@ window.initSocket = (_gameName?: string) => {
     }
 
     // Create top discard card from server
+    const cardW0 = (window as any).gameSettings?.cardW || 100;
     if (data.topCard) {
       const topC = (window as any).createNoMercyCard(
         data.topCard.type || 'number',
@@ -468,23 +475,44 @@ window.initSocket = (_gameName?: string) => {
       );
       topC.serverId = data.topCard.id;
       topC.cardDeal = false;
-      topC.x = 0;
+      // Place the discard at +cardW/2 (matching showDiscardCard's tween target).
+      // Baseline b9f0eb1 does this; without it the discard card sits at x=0 and
+      // overlaps the deck pile (at -cardW/2), so the two stacks look jammed
+      // together and the discard covers part of the deck's click/hit zone.
+      topC.x = cardW0 / 2;
       topC.y = 0;
       topC.rotation = (Math.random() * 16) - 8;
       gData.discard.push(topC.cardIndex);
       (window as any).flipCard(topC);
     }
 
-    // Create draw pile dummy cards
+    // Create draw pile dummy cards.
+    // NOTE: createCard() already places the card-back art into frontContainer,
+    // so dummies are face-down by default - no per-card flip animation needed.
     const drawCount = Math.max(data.deckRemaining || 30, 20);
     const cardW = (window as any).gameSettings?.cardW || 100;
     for (let d = 0; d < drawCount; d++) {
       const dCard = (window as any).createNoMercyCard('number', 'red', 0, 0);
       dCard.cardDeal = false;
+      dCard.visible = false;
       dCard.x = -(cardW / 2);
       dCard.y = 0;
-      (window as any).flipCardCover(dCard);
       gData.draw.push(dCard.cardIndex);
+    }
+    // Reveal ONLY gameData.draw[0] and raise it above every other pile card.
+    // The deck-click handler requires clicked index === gameData.draw[0];
+    // without this the visible top card is the last-created dummy and deck
+    // clicks never register as draws.
+    if (typeof (window as any).showDrawCard === 'function') {
+      (window as any).showDrawCard(false);
+      // showDrawCard() re-raises the discard top above the deck at the end;
+      // since both piles overlap horizontally, that makes clicks on the shared
+      // area land on the discard card and get silently ignored. Raise the
+      // deck top back above it so the deck always wins its own hit zone.
+      const deckTop = (window as any).$.cards[gData.draw[0]];
+      if (deckTop && typeof (window as any).setCardDepth === 'function') {
+        (window as any).setCardDepth(deckTop);
+      }
     }
 
     gData.prepared = true;
@@ -709,10 +737,25 @@ window.initSocket = (_gameName?: string) => {
     console.log('[Socket] Authoritative server_card_drawn:', data);
     const gData = (window as any).gameData;
     const $ = (window as any).$;
+    const isMe = (data.playerIndex === window.socketData.gameIndex);
 
-    if (gData && $) {
+    if (gData && $ && $.players[data.playerIndex]) {
       gData.player = data.playerIndex;
-      const isMe = (data.playerIndex === window.socketData.gameIndex);
+
+      // Consume the visual top of the local draw pile so it stays in sync
+      // with the authoritative server deck.
+      if (gData.draw.length > 0) {
+        const consumedIdx = gData.draw.shift();
+        const consumed = $.cards[consumedIdx];
+        const playContainer = (window as any).cardsPlayContainer;
+        if (consumed && playContainer) {
+          [consumed.shadow, consumed, consumed.highlight, consumed.eliminated].forEach((part: any) => {
+            if (part && playContainer.contains(part)) {
+              playContainer.removeChild(part);
+            }
+          });
+        }
+      }
 
       if (isMe && data.card) {
         // Human player draws exact card
@@ -728,12 +771,24 @@ window.initSocket = (_gameName?: string) => {
         (window as any).toggleCardAction(card, true);
         (window as any).flipCard(card);
       } else {
-        // Opponent draws covered card
+        // Opponent draws covered card (serverId kept for later play matching)
         const card = (window as any).createNoMercyCard('number', 'red', 0, 0);
+        if (data.card) {
+          card.serverId = data.card.id;
+        }
         card.cardDeal = true;
         $.players[data.playerIndex].cards.push(card.cardIndex);
         (window as any).toggleCardAction(card, false);
-        (window as any).flipCardCover(card);
+      }
+
+      // Refresh the visible pile top after consuming a card
+      if (gData.draw.length > 0 && typeof (window as any).showDrawCard === 'function') {
+        (window as any).showDrawCard(false);
+        // Same depth rule as initial setup: deck top must beat discard overlap
+        const deckTop = (window as any).$.cards[gData.draw[0]];
+        if (deckTop && typeof (window as any).setCardDepth === 'function') {
+          (window as any).setCardDepth(deckTop);
+        }
       }
 
       if (typeof (window as any).positionPlayerCards === 'function') {
@@ -741,6 +796,15 @@ window.initSocket = (_gameName?: string) => {
       }
       if (typeof (window as any).playSound === 'function') {
         (window as any).playSound('soundCardDeal');
+      }
+
+      if (isMe) {
+        // Mirror legacy bookkeeping: one manual draw happened this turn and
+        // the server acked it, so re-enable input immediately.
+        clearTimeout((window as any).__drawAckTimer);
+        (window as any).__drawAckTimer = null;
+        gData.turn.animating = false;
+        gData.turn.drawCount = 1;
       }
     }
 
@@ -1003,6 +1067,11 @@ window.startSocketMatch = () => {
     return;
   }
 
+  // The DOM lobby is usable while game assets are still loading; the EaselJS
+  // containers (cardsPlayContainer etc.) only exist once buildGameCanvas()
+  // has run after preload completes. Starting before that used to crash
+  // prepareCards() and silently kill the match. Wait for readiness instead.
+  const beginStart = () => {
   const gData = (window as any).gameData;
   const currentRoom = (MultiplayerUIManager.getInstance() as any).currentRoom || currentRoomData;
   const playersList = currentRoom?.players || [];
@@ -1048,6 +1117,26 @@ window.startSocketMatch = () => {
       includeSender: true,
       payload: syncPayload
     });
+  }
+  };
+
+  const canvasReady = () => !!(window as any).cardsPlayContainer;
+  if (canvasReady()) {
+    beginStart();
+  } else {
+    console.log('[Socket] Canvas still loading - deferring match start...');
+    MultiplayerUIManager.getInstance().showToast('Finishing load...', '⏳');
+    let tries = 0;
+    const waitCanvas = () => {
+      if (canvasReady()) { beginStart(); return; }
+      if (++tries > 150) { // 30s max
+        console.warn('[Socket] Match start aborted: game canvas never became ready.');
+        MultiplayerUIManager.getInstance().showToast('Load failed. Please restart.', '⚠️');
+        return;
+      }
+      setTimeout(waitCanvas, 200);
+    };
+    waitCanvas();
   }
 };
 

@@ -4,6 +4,7 @@
  * 
  */
 function preparePlayers(){
+	if(!cardsPlayersContainer){ return; } // canvas not built yet (asset load race)
 	cardsPlayersContainer.removeAllChildren();
 	gameData.cardIndex = 0;
 	gameData.draw = [];
