@@ -47,6 +47,7 @@
     }
 
     var canvas = document.createElement('canvas');
+    if (!canvas) return null;
     canvas.width = 200;
     canvas.height = 300;
     var ctx = canvas.getContext('2d');

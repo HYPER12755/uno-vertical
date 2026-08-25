@@ -61,6 +61,10 @@ function getNoMercyCardCanvas(cardType, cardColor, cardValue, themeIndex) {
 	}
 
 	var canvas = document.createElement('canvas');
+	if (!canvas) {
+		var fake = {};
+		return fake;
+	}
 	canvas.width = 200;
 	canvas.height = 300;
 	var ctx = canvas.getContext('2d');

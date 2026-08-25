@@ -82,6 +82,9 @@ function preparePlayers(){
 				if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
 					postSocketUpdate('called', socketData.gameIndex, true);
 				}
+				if (typeof window.forceFlushOutgoingEvents === 'function') {
+					window.forceFlushOutgoingEvents();
+				}
 				playSound('soundCall');
 				if($.players["called" + cIdx]){
 					$.players["called" + cIdx].visible = true;
@@ -104,6 +107,9 @@ function preparePlayers(){
 				}
 				if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
 					postSocketUpdate('targetaim', evt.target.playerIndex, false);
+				}
+				if (typeof window.forceFlushOutgoingEvents === 'function') {
+					window.forceFlushOutgoingEvents();
 				}
 
 				toggleTargetIcon(evt.target.playerIndex);

@@ -184,7 +184,7 @@ function resizeGameLayout(){
 		
 		for(var n=0; n<gameData.players; n++){
 			var seqIndex = gameData.seq[n];
-			if($.players[seqIndex]){
+			if(seqIndex !== undefined && $.players[seqIndex]){
 				$.players[seqIndex].x = positionLayout[positionArr[n]].x;
 				$.players[seqIndex].y = positionLayout[positionArr[n]].y;
 				$.players[seqIndex].dir = positionLayout[positionArr[n]].dir;

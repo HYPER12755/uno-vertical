@@ -29,6 +29,9 @@ function initMain() {
   goPage('main');
   if (typeof initSocket == 'function' && multiplayerSettings.enable) {
     initSocket("fourcolors");
+    if (window.MultiplayerUIManager && typeof window.MultiplayerUIManager.getInstance === 'function') {
+        window.MultiplayerUIManager.getInstance().checkUrlForRoomInvite();
+    }
   }
 
   checkMobileOrientation();

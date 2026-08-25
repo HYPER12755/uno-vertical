@@ -13,7 +13,7 @@
 	  var resumeAudioContext = function() {
 		// handler for fixing suspended audio context in Chrome
 		try {
-			if (createjs.WebAudioPlugin.context.state === "suspended") {
+			if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context && createjs.WebAudioPlugin.context.state === "suspended") {
 				createjs.WebAudioPlugin.context.resume();
 				// Should only need to fire once
 				window.removeEventListener("click", resumeAudioContext);
@@ -64,7 +64,7 @@ function checkBrowser(){
 	deviceVer=getDeviceVer();
 	
 	var canvasEl = document.createElement('canvas');
-	if(canvasEl.getContext){ 
+	if(canvasEl && canvasEl.getContext){ 
 	  browserSupport=true;
 	}
 	

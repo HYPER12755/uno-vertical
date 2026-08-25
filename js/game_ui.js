@@ -270,6 +270,9 @@ function buildGameButton(){
 				if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
 					postSocketUpdate('choosecolor', chosenColor, false);
 				}
+				if (typeof window.forceFlushOutgoingEvents === 'function') {
+					window.forceFlushOutgoingEvents();
+				}
 				gameData.match.value = 0;
 				gameData.match.color = chosenColor;
 				toggleColors(false);

@@ -372,16 +372,25 @@ class ServerGameSession {
       }
 
       if (playable.length > 0) {
-        // Smart bot prioritization: DiscardAll > WildDraw > Action > Number
+        // Smart bot prioritization: DiscardAll > WildDraw/SkipEveryone > Skip/Reverse/Draw2 > Number/Wild
         let chosen = playable[0];
+        let bestScore = -1;
+        
         for (const card of playable) {
-          if (card.type === 'discardall') {
-            chosen = card;
-            break;
-          } else if (card.type.startsWith('wilddraw') || card.type === 'skipeveryone') {
+          let score = 0;
+          if (card.type === 'number') score = 10;
+          else if (card.type === 'wild') score = 15;
+          else if (card.type === 'skip' || card.type === 'reverse' || card.type === 'wildskip' || card.type === 'wildreverse') score = 30;
+          else if (card.type === 'draw2' || card.type === 'wilddraw2') score = 40;
+          else if (card.type.startsWith('wilddraw') || card.type === 'skipeveryone' || card.type === 'wildskipeveryone') score = 80;
+          else if (card.type === 'discardall') score = 100;
+          
+          if (score > bestScore) {
+            bestScore = score;
             chosen = card;
           }
         }
+        
         this.executeCardPlay(this.currentTurn, chosen.id);
       } else {
         // Bot draws card from deck
@@ -390,12 +399,27 @@ class ServerGameSession {
     }, thinkTime);
   }
 
-  executeCardPlay(playerIndex, cardId) {
+  executeCardPlay(playerIndex, cardId, cardData) {
     const p = this.players[playerIndex];
     if (!p || p.eliminated) return;
 
-    const cardIdx = p.hand.findIndex(c => c.id === cardId);
-    if (cardIdx === -1) return;
+    let cardIdx = p.hand.findIndex(c => c.id === cardId || String(c.id) === String(cardId));
+    if (cardIdx === -1 && cardData) {
+      cardIdx = p.hand.findIndex(c => 
+        (cardData.cardType ? c.type === cardData.cardType : true) &&
+        (cardData.color ? c.color === cardData.color : true) &&
+        (cardData.value !== undefined && cardData.value !== '' ? String(c.value) === String(cardData.value) : true)
+      );
+    }
+    if (cardIdx === -1 && cardData && cardData.cardIndex !== undefined && p.hand[cardData.cardIndex]) {
+      cardIdx = cardData.cardIndex;
+    }
+
+    if (cardIdx === -1) {
+      console.warn(`[Server] Card ${cardId} not found in hand of player ${playerIndex}. Resending turn.`);
+      this.startPlayerTurn();
+      return;
+    }
 
     const card = p.hand.splice(cardIdx, 1)[0];
     this.discardPile.push(card);
@@ -658,7 +682,7 @@ class ServerGameSession {
     if (this.checkCanPlayCard(drawnCard, playerIndex) && this.houseRules.forcePlay) {
       setTimeout(() => {
         this.executeCardPlay(playerIndex, drawnCard.id);
-      }, 250);
+      }, 500);
       return;
     }
 
@@ -666,7 +690,7 @@ class ServerGameSession {
     setTimeout(() => {
       this.currentTurn = this.getNextPlayerIndex(this.currentTurn, this.direction);
       this.startPlayerTurn();
-    }, 180);
+    }, 600);
   }
 
   executeDrawStackSurrender(playerIndex) {
@@ -712,7 +736,7 @@ class ServerGameSession {
     setTimeout(() => {
       this.currentTurn = this.getNextPlayerIndex(this.currentTurn, this.direction);
       this.startPlayerTurn();
-    }, 280);
+    }, Math.max(700, Math.min(1500, drawn.length * 150)));
   }
 
   executeJumpIn(playerIndex, cardId) {
@@ -901,8 +925,15 @@ function handleClientGameMessage(io, socket, rooms, data) {
 
   switch (data.type) {
     case 'player_play_card':
+      if (session.currentTurn === playerIndex && (session.turnState === 'WAITING_PLAYER_ACTION' || session.turnState === 'INIT')) {
+        session.executeCardPlay(playerIndex, data.cardId, data);
+      }
+      break;
+
+    case 'player_pass_turn':
       if (session.currentTurn === playerIndex && session.turnState === 'WAITING_PLAYER_ACTION') {
-        session.executeCardPlay(playerIndex, data.cardId);
+        session.currentTurn = session.getNextPlayerIndex(session.currentTurn, session.direction);
+        session.startPlayerTurn();
       }
       break;
 

@@ -104,7 +104,11 @@ function drawPlayerCardComplete(index, card){
 
 	var showCardContent = checkIsPlayer(index);
 	if(showCardContent){
+		gameData.turn.action = true;
 		toggleCardAction(card, true);
+		if (typeof window.forceFlushOutgoingEvents === 'function') {
+			window.forceFlushOutgoingEvents();
+		}
 	}
 
 	positionPlayerCards(index, true);
@@ -216,14 +220,22 @@ function tryAIMove(possibleCardArr){
 		if(possibleCardArr.length > 0){
 			TweenMax.delayedCall(moveSpeed, function(){
 				var chosenCard = possibleCardArr[0];
+				var bestScore = -1;
+				
 				// AI smart prioritization for No Mercy actions
 				for (var i = 0; i < possibleCardArr.length; i++) {
 					var cObj = $.cards[possibleCardArr[i]];
 					if (cObj) {
-						if (cObj.cardType === 'discardall') {
-							chosenCard = possibleCardArr[i];
-							break;
-						} else if (cObj.cardType === 'skipeveryone' || cObj.cardType === 'wilddraw10' || cObj.cardType === 'wilddraw6') {
+						var score = 0;
+						if (cObj.cardType === 'number') score = 10;
+						else if (cObj.cardType === 'wild') score = 15;
+						else if (cObj.cardType === 'skip' || cObj.cardType === 'reverse' || cObj.cardType === 'wildskip' || cObj.cardType === 'wildreverse') score = 30;
+						else if (cObj.cardType === 'draw2' || cObj.cardType === 'wilddraw2') score = 40;
+						else if ((cObj.cardType && cObj.cardType.startsWith('wilddraw')) || cObj.cardType === 'skipeveryone' || cObj.cardType === 'wildskipeveryone') score = 80;
+						else if (cObj.cardType === 'discardall') score = 100;
+						
+						if (score > bestScore) {
+							bestScore = score;
 							chosenCard = possibleCardArr[i];
 						}
 					}
@@ -271,6 +283,14 @@ function displayPlayerTurn(){
 	gameData.turn.continuePlay = false;
 	gameData.turn.penalty = false;
 
+	var isLocalPlayer = checkIsPlayer(gameData.player);
+	if(isLocalPlayer){
+		gameData.turn.action = true;
+		if(typeof window.forceFlushOutgoingEvents === 'function'){
+			window.forceFlushOutgoingEvents();
+		}
+	}
+
 	var actionCard = false;
 	if(gameData.turn.queue.length > 0){
 		for(var n=0; n<gameData.turn.queue[0].data.length; n++){
@@ -314,6 +334,10 @@ function playerReadyAction(){
 	var proceedAction = checkIsPlayer(gameData.player);
 	if(proceedAction){
 		gameData.turn.action = true;
+		gameData.turn.animating = false;
+		if(typeof window.forceFlushOutgoingEvents === 'function'){
+			window.forceFlushOutgoingEvents();
+		}
 	}
 }
 
@@ -338,6 +362,10 @@ function loopCardAction(){
 			var proceedAction = checkIsPlayer(gameData.player);
 			if(proceedAction){
 				gameData.turn.action = true;
+				gameData.turn.animating = false;
+				if(typeof window.forceFlushOutgoingEvents === 'function'){
+					window.forceFlushOutgoingEvents();
+				}
 				if(gameData.turn.loseTurn){
 					gameData.turn.drawCard = false;
 					if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
@@ -459,15 +487,19 @@ function checkMatchCard(cardIndex){
  */
 function highlightPlayer(con){
 	for(var n=0; n<gameData.players; n++){
-		TweenMax.to($.players["stats" + n].playerName, .2, {alpha:1, overwrite:true});	
-		$.players["stats" + n].alpha = .5;
+		if ($.players["stats" + n]) {
+			TweenMax.to($.players["stats" + n].playerName, .2, {alpha:1, overwrite:true});	
+			$.players["stats" + n].alpha = .5;
+		}
 	}
 
 	if(con){
 		playSound('soundAlert');
-		animatePlayerFocus($.players["stats" + gameData.player]);
-		animateBlink($.players["stats" + gameData.player].playerName);
-		$.players["stats" + gameData.player].alpha = 1;
+		if ($.players["stats" + gameData.player]) {
+			animatePlayerFocus($.players["stats" + gameData.player]);
+			animateBlink($.players["stats" + gameData.player].playerName);
+			$.players["stats" + gameData.player].alpha = 1;
+		}
 	}
 }
 

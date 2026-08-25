@@ -25,6 +25,7 @@ declare global {
     emitServerAction: (type: string, data?: any) => void;
     reportActionDone: (actionToken: string) => void;
     currentActionToken: string | null;
+    flushSocketQueue?: () => void;
   }
 }
 
@@ -46,29 +47,91 @@ let currentRoomData: any = null;
 window.currentActionToken = null;
 let pingInterval: ReturnType<typeof setInterval> | null = null;
 
-// Send action to Authoritative Game Server
- window.emitServerAction = (type: string, data: any = {}) => {
-  if (!socket || !currentRoomId) return;
-  // Never let a payload field clobber the routing keys (roomId/type). A stray
-  // `type` in the payload used to overwrite the action name, so the server
-  // silently dropped player_play_card (only draw, whose payload is {}, worked).
+interface OutgoingSocketAction {
+  id: string;
+  type: string;
+  data: any;
+  endpoint: 'playerAction' | 'gameAction' | 'player_action_done';
+  timestamp: number;
+}
+
+const socketActionQueue: OutgoingSocketAction[] = [];
+let isFlushingSocket = false;
+
+/**
+ * Force-flush the socket action queue to ensure all user click events and
+ * game actions are immediately transmitted over the WebSocket without delay.
+ */
+export function flushSocketQueue(): void {
+  if (!socket || isFlushingSocket) return;
+  isFlushingSocket = true;
+
+  try {
+    while (socketActionQueue.length > 0) {
+      if (!socket.connected) break;
+      const item = socketActionQueue.shift();
+      if (!item) break;
+
+      if (item.endpoint === 'playerAction') {
+        const safe = { ...item.data };
+        delete (safe as any).type;
+        delete (safe as any).roomId;
+        socket.emit('playerAction', {
+          roomId: currentRoomId,
+          type: item.type,
+          ...safe
+        });
+      } else if (item.endpoint === 'gameAction') {
+        socket.emit('gameAction', {
+          roomId: currentRoomId,
+          action: item.type,
+          payload: item.data?.payload,
+          includeSender: item.data?.broadcast
+        });
+      } else if (item.endpoint === 'player_action_done') {
+        socket.emit('player_action_done', {
+          roomId: currentRoomId,
+          actionToken: item.data?.actionToken
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[Socket] Error in flushSocketQueue:', err);
+  } finally {
+    isFlushingSocket = false;
+  }
+}
+window.flushSocketQueue = flushSocketQueue;
+
+// Send action to Authoritative Game Server with instantaneous queue flush
+window.emitServerAction = (type: string, data: any = {}) => {
   const safe = { ...data };
   delete (safe as any).type;
   delete (safe as any).roomId;
-  socket.emit('playerAction', {
-    roomId: currentRoomId,
+
+  socketActionQueue.push({
+    id: 'act_' + Math.random().toString(36).substr(2, 9),
     type: type,
-    ...safe
+    data: safe,
+    endpoint: 'playerAction',
+    timestamp: Date.now()
   });
+
+  flushSocketQueue();
 };
 
 // Report "I'm done" after completing client animation
 window.reportActionDone = (actionToken: string) => {
-  if (!socket || !currentRoomId || !actionToken) return;
-  socket.emit('player_action_done', {
-    roomId: currentRoomId,
-    actionToken: actionToken
+  if (!actionToken) return;
+  socketActionQueue.push({
+    id: 'done_' + Math.random().toString(36).substr(2, 9),
+    type: 'player_action_done',
+    data: { actionToken },
+    endpoint: 'player_action_done',
+    timestamp: Date.now()
   });
+
+  flushSocketQueue();
 };
 
 // Initialize Socket Connection
@@ -89,6 +152,7 @@ window.initSocket = (_gameName?: string) => {
 
   socket.on('connect', () => {
     console.log('[Socket] Connected to Four Colors server. ID:', socket?.id);
+    flushSocketQueue();
     if (pingInterval) clearInterval(pingInterval);
     pingInterval = setInterval(() => {
       socket?.emit('latency_ping', Date.now());
@@ -192,9 +256,11 @@ window.initSocket = (_gameName?: string) => {
 
     const gData = (window as any).gameData;
     if (gData && players) {
-      gData.names = players.map(p => p.name || 'Player');
-      gData.players = players.length;
-      gData.isBotArr = players.map(p => !!p.isBot);
+      if ((window as any).curPage !== 'game') {
+        gData.names = players.map(p => p.name || 'Player');
+        gData.players = players.length;
+        gData.isBotArr = players.map(p => !!p.isBot);
+      }
     }
 
     MultiplayerUIManager.getInstance().updateLobbyPlayers(players);
@@ -214,7 +280,7 @@ window.initSocket = (_gameName?: string) => {
       gSettings.houseRules = options.houseRules;
     }
     if (gData && options) {
-      if (options.maxPlayers) gData.players = options.maxPlayers;
+      if (options.maxPlayers && (window as any).curPage !== 'game') gData.players = options.maxPlayers;
       if (!gData.fourcolors) gData.fourcolors = {};
       if (options.mode) {
         gData.mode = options.mode;
@@ -278,6 +344,9 @@ window.initSocket = (_gameName?: string) => {
       gSettings.houseRules = data.houseRules;
     }
 
+    if (typeof (window as any).prepareCards === 'function') {
+      (window as any).prepareCards();
+    }
     // Reset match state
     gData.match = {
       color: data.currentColor || (data.topCard && data.topCard.color) || 'red',
@@ -565,18 +634,38 @@ window.initSocket = (_gameName?: string) => {
     const $ = (window as any).$;
     if (!gData || !$) return;
 
+    clearTimeout((window as any).__drawAckTimer);
+    clearTimeout((window as any).__playAckTimer);
+    (window as any).__drawAckTimer = null;
+    (window as any).__playAckTimer = null;
+
     window.currentActionToken = data.actionToken;
     gData.player = data.currentTurn;
     gData.turn.reverse = (data.direction === -1);
     gData.turn.pendingDrawStack = data.pendingDrawStack || 0;
     gData.turn.pendingDrawType = data.pendingDrawType || '';
-    gData.match.color = data.currentColor || 'red';
+    gData.match.color = data.currentColor || (data.topCard && data.topCard.color) || 'red';
+    if (data.topCard) {
+      gData.match.type = data.topCard.type || 'number';
+      gData.match.value = data.topCard.value !== undefined ? data.topCard.value : '';
+    } else if (gData.discard && gData.discard.length > 0 && $.cards[gData.discard[gData.discard.length - 1]]) {
+      const topC = $.cards[gData.discard[gData.discard.length - 1]];
+      gData.match.type = topC.cardType || 'number';
+      gData.match.value = topC.cardValue !== undefined ? topC.cardValue : '';
+    }
+    gData.match.lastColor = gData.match.color;
     gData.turn.action = true;
     gData.turn.played = false;
     gData.turn.drawCount = 0;
     gData.turn.animating = false;
+    gData.turn.playableCardIds = data.playableCardIds || [];
 
     const isMyTurn = (data.currentTurn === window.socketData.gameIndex);
+
+    // Force flush outgoing queue and ensure input responsiveness
+    if (typeof (window as any).forceFlushOutgoingEvents === 'function') {
+      (window as any).forceFlushOutgoingEvents();
+    }
 
     if (typeof (window as any).toggleArrowTurn === 'function') {
       (window as any).toggleArrowTurn();
@@ -591,54 +680,78 @@ window.initSocket = (_gameName?: string) => {
       (window as any).highlightPlayer(true);
     }
 
+    const myIdx = window.socketData.gameIndex;
+    const myCards = ($.players && $.players[myIdx] && $.players[myIdx].cards) ? $.players[myIdx].cards : [];
+
     if (isMyTurn) {
       MultiplayerUIManager.getInstance().showToast(`It's your turn!`, '⭐');
       if (typeof (window as any).playSound === 'function') {
         (window as any).playSound('soundTurn');
       }
-      gData.turn.playableCardIds = data.playableCardIds || [];
-      // Enable and highlight playable cards in my hand
-      if ($.players[data.currentTurn] && $.players[data.currentTurn].cards) {
-        let hasPlayable = false;
-        for (const cIdx of $.players[data.currentTurn].cards) {
-          const cObj = $.cards[cIdx];
-          if (cObj) {
-            const isPlayable = (data.playableCardIds && data.playableCardIds.length > 0)
-              ? (data.playableCardIds.includes(cObj.serverId) || data.playableCardIds.includes(cIdx))
-              : (typeof (window as any).checkMatchCard === 'function' ? (window as any).checkMatchCard(cIdx) : true);
 
-            if (isPlayable) {
-              hasPlayable = true;
-              if (typeof (window as any).highlightCard === 'function') {
-                (window as any).highlightCard(cObj, true);
-              }
-              if (typeof (window as any).toggleCardAction === 'function') {
-                (window as any).toggleCardAction(cObj, true);
-              }
-            } else {
-              if (typeof (window as any).highlightCard === 'function') {
-                (window as any).highlightCard(cObj, false);
-              }
-              if (typeof (window as any).toggleCardAction === 'function') {
-                (window as any).toggleCardAction(cObj, false);
-              }
+      let hasPlayable = false;
+      for (const cIdx of myCards) {
+        const cObj = $.cards[cIdx];
+        if (cObj) {
+          const isPlayable = (data.playableCardIds && data.playableCardIds.length > 0)
+            ? (data.playableCardIds.includes(cObj.serverId) || data.playableCardIds.includes(cIdx) || (typeof (window as any).checkMatchCard === 'function' && (window as any).checkMatchCard(cIdx)))
+            : (typeof (window as any).checkMatchCard === 'function' ? (window as any).checkMatchCard(cIdx) : false);
+
+          if (isPlayable) {
+            hasPlayable = true;
+            if (typeof (window as any).highlightCard === 'function') {
+              (window as any).highlightCard(cObj, true);
+            }
+            if (typeof (window as any).toggleCardAction === 'function') {
+              (window as any).toggleCardAction(cObj, true);
+            }
+          } else {
+            if (typeof (window as any).highlightCard === 'function') {
+              (window as any).highlightCard(cObj, false);
+            }
+            if (typeof (window as any).toggleCardAction === 'function') {
+              (window as any).toggleCardAction(cObj, false);
             }
           }
         }
+      }
 
-        // Draw pile is always accessible on player turn
-        gData.turn.drawCard = true;
-        if (gData.draw.length > 0) {
-          const drawTop = $.cards[gData.draw[0]];
-          if (drawTop) {
-            if (typeof (window as any).toggleCardAction === 'function') {
-              (window as any).toggleCardAction(drawTop, true);
-            }
-            if (!hasPlayable && typeof (window as any).highlightCard === 'function') {
-              (window as any).highlightCard(drawTop, true);
-            } else if (typeof (window as any).highlightCard === 'function') {
-              (window as any).highlightCard(drawTop, false);
-            }
+      // Draw pile is always accessible on player turn
+      gData.turn.drawCard = true;
+      if (gData.draw && gData.draw.length > 0) {
+        const drawTop = $.cards[gData.draw[0]];
+        if (drawTop) {
+          if (typeof (window as any).toggleCardAction === 'function') {
+            (window as any).toggleCardAction(drawTop, true);
+          }
+          if ((!hasPlayable || gData.turn.pendingDrawStack > 0) && typeof (window as any).highlightCard === 'function') {
+            (window as any).highlightCard(drawTop, true);
+          } else if (typeof (window as any).highlightCard === 'function') {
+            (window as any).highlightCard(drawTop, false);
+          }
+        }
+      }
+    } else {
+      // Not my turn: clear highlights on my cards and draw pile
+      for (const cIdx of myCards) {
+        const cObj = $.cards[cIdx];
+        if (cObj) {
+          if (typeof (window as any).highlightCard === 'function') {
+            (window as any).highlightCard(cObj, false);
+          }
+          if (typeof (window as any).toggleCardAction === 'function') {
+            (window as any).toggleCardAction(cObj, false);
+          }
+        }
+      }
+      if (gData.draw && gData.draw.length > 0) {
+        const drawTop = $.cards[gData.draw[0]];
+        if (drawTop) {
+          if (typeof (window as any).highlightCard === 'function') {
+            (window as any).highlightCard(drawTop, false);
+          }
+          if (typeof (window as any).toggleCardAction === 'function') {
+            (window as any).toggleCardAction(drawTop, false);
           }
         }
       }
@@ -651,9 +764,15 @@ window.initSocket = (_gameName?: string) => {
     const gData = (window as any).gameData;
     const $ = (window as any).$;
 
+    clearTimeout((window as any).__playAckTimer);
+    (window as any).__playAckTimer = null;
+
     if (gData && data.card && $) {
       gData.player = data.playerIndex;
       gData.match.color = data.currentColor || data.card.color || 'red';
+      gData.match.type = data.card.type || 'number';
+      gData.match.value = data.card.value !== undefined ? data.card.value : '';
+      gData.match.lastColor = gData.match.color;
       gData.turn.pendingDrawStack = data.pendingDrawStack || 0;
 
       const isMyPlay = (data.playerIndex === window.socketData.gameIndex);
@@ -887,6 +1006,20 @@ window.initSocket = (_gameName?: string) => {
     }
   });
 
+  // Deck Reshuffled
+  socket.on('server_deck_reshuffled', (data: any) => {
+    console.log('[Socket] Authoritative server_deck_reshuffled:', data);
+    if (typeof (window as any).recycleDiscardPile === 'function') {
+      (window as any).recycleDiscardPile();
+    }
+    if (typeof (window as any).showDrawCard === 'function') {
+      (window as any).showDrawCard(false);
+    }
+    if (typeof (window as any).playSound === 'function') {
+      (window as any).playSound('soundCardShuffle');
+    }
+  });
+
   // Request Color from Human Player
   socket.on('server_request_color', (data: any) => {
     if ((window as any).gameData) {
@@ -972,6 +1105,15 @@ window.initSocket = (_gameName?: string) => {
       '🏆'
     );
     window.recordMatchResult(data.roundPoints);
+    
+    if (typeof (window as any).showGameStatus === 'function') {
+      const gData = (window as any).gameData;
+      if (gData && (window as any).$) {
+        gData.player = data.winnerIndex;
+        (window as any).highlightPlayer(false);
+        (window as any).showGameStatus('emptycards');
+      }
+    }
   });
 
   socket.on('playerDisconnected', (pIdx: any) => {
@@ -979,6 +1121,78 @@ window.initSocket = (_gameName?: string) => {
     const gData = (window as any).gameData;
     if (gData && gData.isBotArr && typeof pIdx === 'number' && pIdx >= 0) {
       gData.isBotArr[pIdx] = true;
+    }
+  });
+
+  // GAME ACTION (Legacy and Peer Relay Handler)
+  socket.on('gameAction', (data: any) => {
+    if (!data || !data.action) return;
+    const gData = (window as any).gameData;
+    const $ = (window as any).$;
+    if (!gData) return;
+
+    switch (data.action) {
+      case 'choosecolor':
+        if (data.payload) {
+          gData.match.color = data.payload;
+          gData.match.lastColor = data.payload;
+          if (typeof (window as any).toggleColors === 'function') (window as any).toggleColors(false);
+          if (typeof (window as any).getMatchDetail === 'function') (window as any).getMatchDetail();
+        }
+        break;
+
+      case 'called':
+        if (typeof (window as any).playSound === 'function') (window as any).playSound('soundCall');
+        const pIdx = typeof data.payload === 'number' ? data.payload : gData.player;
+        if ($ && $.players && $.players['called' + pIdx]) {
+          $.players['called' + pIdx].visible = true;
+        }
+        break;
+
+      case 'targetaim':
+        if (typeof (window as any).swapPlayerCards === 'function' && typeof data.payload === 'number') {
+          (window as any).swapPlayerCards(data.payload);
+        }
+        break;
+
+      case 'wildaction':
+        if (data.payload && data.payload.card) {
+          const sub = data.payload.card;
+          if (sub === 'discardplayercard' && typeof (window as any).discardPlayerCard === 'function') {
+            (window as any).discardPlayerCard(data.payload.cardData, true);
+          } else if (sub === 'drawplayercard' && typeof (window as any).drawPlayerCard === 'function') {
+            (window as any).drawPlayerCard(false);
+          } else if (sub === 'stackdraw' && typeof (window as any).drawPlayerCard === 'function') {
+            (window as any).drawPlayerCard(true);
+          } else if (sub === 'passturn' && typeof (window as any).checkRoundEnd === 'function') {
+            (window as any).checkRoundEnd();
+          } else if (sub === 'jumpin') {
+            if (typeof data.payload.player === 'number') gData.player = data.payload.player;
+            if (typeof (window as any).showGameStatus === 'function') (window as any).showGameStatus('jump_in');
+            if (typeof (window as any).discardPlayerCard === 'function') (window as any).discardPlayerCard(data.payload.cardData, true);
+          }
+        }
+        break;
+
+      case 'updateoptions':
+        if (data.payload) {
+          if (data.payload.players !== undefined && (window as any).curPage !== 'game') gData.players = data.payload.players;
+          if (data.payload.pointIndex !== undefined) gData.pointIndex = data.payload.pointIndex;
+          if (data.payload.special !== undefined) {
+            if (!gData.fourcolors) gData.fourcolors = {};
+            gData.fourcolors.special = data.payload.special;
+          }
+          if (data.payload.themeIndex !== undefined) gData.themeIndex = data.payload.themeIndex;
+          if (data.payload.option !== undefined) gData.lastOption = data.payload.option;
+          if (typeof (window as any).displayCardsOptions === 'function') (window as any).displayCardsOptions();
+        }
+        break;
+
+      case 'shuffleplayercards':
+        if (data.payload && data.payload.allCards && typeof (window as any).shufflePlayerCards === 'function') {
+          (window as any).shufflePlayerCards(data.payload.allCards);
+        }
+        break;
     }
   });
 
@@ -1140,15 +1354,17 @@ window.startSocketMatch = () => {
   }
 };
 
-// POST ACTION UPDATE (Legacy / Backward Compatibility)
+// POST ACTION UPDATE (Legacy / Backward Compatibility with Force-Flush)
 window.postSocketUpdate = (action: string, data: any = null, broadcast: boolean = false) => {
-  if (!socket || !currentRoomId) return;
-  socket.emit('gameAction', {
-    roomId: currentRoomId,
-    action,
-    payload: data,
-    includeSender: broadcast
+  socketActionQueue.push({
+    id: 'gact_' + Math.random().toString(36).substr(2, 9),
+    type: action,
+    data: { payload: data, broadcast },
+    endpoint: 'gameAction',
+    timestamp: Date.now()
   });
+
+  flushSocketQueue();
 };
 
 // LEAVE / EXIT ROOM

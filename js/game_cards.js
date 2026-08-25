@@ -169,11 +169,29 @@ function createCard(name, color){
 		var targetCard = evt.currentTarget || $.cards[this.cardIndex];
 		var cardIdx = (targetCard && targetCard.cardIndex !== undefined) ? targetCard.cardIndex : this.cardIndex;
 
-		if(gameData.turn.animating || gameData.turn.played || colorsContainer.visible || gameData.turn.pickColors || !gameData.turn.action){
+		if(colorsContainer.visible || gameData.turn.pickColors){
 			return;
 		}
 
+		var isOnline = (window.socketData && window.socketData.online) || (typeof socketData !== 'undefined' && socketData.online);
 		var proceedClick = checkIsPlayer(gameData.player);
+
+		// If it is the local player's turn, auto-unlock action lock and force-flush
+		if(proceedClick && !gameData.turn.action){
+			gameData.turn.action = true;
+		}
+
+		if(typeof window.forceFlushOutgoingEvents === 'function'){
+			window.forceFlushOutgoingEvents();
+		}
+
+		if(gameData.turn.animating || gameData.turn.played || !gameData.turn.action){
+			if(!proceedClick){
+				// Allow jump-in check below
+			} else {
+				return;
+			}
+		}
 		if(!proceedClick){
 			// Check for Jump-In (exact identical color and value/type played out of turn)
 			if(!colorsContainer.visible && !gameData.turn.pickColors && !gameData.turn.animating && gameSettings.houseRules && gameSettings.houseRules.jumpIn && gameData.discard.length > 0 && targetCard && targetCard.cardDeal){
@@ -184,7 +202,7 @@ function createCard(name, color){
 							gameData.player = p;
 							showGameStatus('jump_in');
 							if ( typeof window.emitServerAction === 'function' && socketData.online) {
-								window.emitServerAction('player_jump_in', { cardId: cardIdx });
+								window.emitServerAction('player_jump_in', { cardId: (targetCard.serverId !== undefined ? targetCard.serverId : cardIdx), cardIndex: cardIdx, cardType: targetCard.cardType, color: targetCard.cardColor, value: targetCard.cardValue });
 							}
 							if ( typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
 								postSocketUpdate('wildaction', {card:'jumpin', player:p, cardData:cardIdx}, false);
@@ -209,8 +227,8 @@ function createCard(name, color){
 			return;
 		}
 
-		// 2. Clicking the DRAW pile (only the top card of the draw pile)
-		var isDrawPileCard = (gameData.draw.length > 0 && cardIdx === gameData.draw[0]);
+		// 2. Clicking the DRAW pile / penalty stack
+		var isDrawPileCard = (gameData.draw && gameData.draw.length > 0 && (cardIdx === gameData.draw[0] || gameData.draw.indexOf(cardIdx) !== -1 || (!targetCard.cardDeal && gameData.discard.indexOf(cardIdx) === -1)));
 		if(isDrawPileCard){
 			if (gameData.turn.pendingDrawStack > 0) {
 				var stackToDraw = gameData.turn.pendingDrawStack;
@@ -219,10 +237,10 @@ function createCard(name, color){
 				gameData.turn.drawCards = gameData.turn.drawCardsTotal = stackToDraw;
 				gameData.turn.drawCardsCount = 0;
 				gameData.turn.loseTurn = true;
-				if ( typeof window.emitServerAction === 'function' && socketData.online) {
+				if ( typeof window.emitServerAction === 'function' && isOnline) {
 					gameData.turn.animating = true;
 					clearTimeout(window.__drawAckTimer);
-					window.__drawAckTimer = setTimeout(function(){ gameData.turn.animating = false; }, 3000);
+					window.__drawAckTimer = setTimeout(function(){ gameData.turn.animating = false; gameData.turn.action = true; }, 3000);
 					window.emitServerAction('player_stack_surrender', {});
 					return;
 				}
@@ -237,6 +255,10 @@ function createCard(name, color){
 			if (gameData.turn.drawCount >= 1) {
 				gameData.turn.drawCard = false;
 				gameData.match.active = false;
+				if ( typeof window.emitServerAction === 'function' && isOnline) {
+					window.emitServerAction('player_pass_turn', {});
+					return;
+				}
 				if (typeof initSocket == 'function' && multiplayerSettings.enable && socketData.online) {
 					postSocketUpdate('wildaction', {card:'passturn'}, false);
 				}
@@ -247,13 +269,11 @@ function createCard(name, color){
 			// Only allow 1 manual draw per turn
 			if(gameData.turn.drawCount < 1 && (gameData.turn.drawCard || !gameData.turn.played)){
 				gameData.turn.drawCount++;
-				if ( typeof window.emitServerAction === 'function' && socketData.online) {
+				if ( typeof window.emitServerAction === 'function' && isOnline) {
 					// Authoritative mode: wait for server_card_drawn to apply the draw.
-					// Use animating (not action=false) so a silent server rejection can
-					// never leave clicks permanently dead - the failsafe self-heals.
 					gameData.turn.animating = true;
 					clearTimeout(window.__drawAckTimer);
-					window.__drawAckTimer = setTimeout(function(){ gameData.turn.animating = false; }, 3000);
+					window.__drawAckTimer = setTimeout(function(){ gameData.turn.animating = false; gameData.turn.action = true; }, 3000);
 					window.emitServerAction('player_draw_card', {});
 					return;
 				}
@@ -269,11 +289,10 @@ function createCard(name, color){
 		var isCardInHand = ($.players[gameData.player] && $.players[gameData.player].cards.indexOf(cardIdx) !== -1);
 		if(isCardInHand && targetCard.cardDeal){
 			var serverCardId = (targetCard.serverId !== undefined) ? targetCard.serverId : cardIdx;
-			var isOnline = (window.socketData && window.socketData.online) || (typeof socketData !== 'undefined' && socketData.online);
 			var canPlay = false;
 			if(isOnline){
 				if(gameData.turn.playableCardIds && gameData.turn.playableCardIds.length > 0){
-					canPlay = (gameData.turn.playableCardIds.indexOf(serverCardId) !== -1) || (gameData.turn.playableCardIds.indexOf(cardIdx) !== -1);
+					canPlay = (gameData.turn.playableCardIds.indexOf(serverCardId) !== -1) || (gameData.turn.playableCardIds.indexOf(cardIdx) !== -1) || (typeof checkMatchCard === 'function' && checkMatchCard(cardIdx));
 				}else{
 					canPlay = checkMatchCard(cardIdx);
 				}
@@ -283,11 +302,9 @@ function createCard(name, color){
 
 			if(canPlay){
 				if ( typeof window.emitServerAction === 'function' && isOnline) {
-					gameData.turn.action = false;
-					// NOTE: payload key is `cardType`, NOT `type`. emitServerAction spreads
-					// the payload into { roomId, type: <action>, ...data }, so a `type`
-					// field here would overwrite the action name and the server would
-					// silently ignore the play (only draw worked because its payload is {}).
+					gameData.turn.animating = true;
+					clearTimeout(window.__playAckTimer);
+					window.__playAckTimer = setTimeout(function(){ gameData.turn.animating = false; gameData.turn.action = true; }, 3000);
 					window.emitServerAction('player_play_card', { cardId: serverCardId, cardIndex: cardIdx, cardType: targetCard.cardType, color: targetCard.cardColor, value: targetCard.cardValue });
 					return;
 				}
@@ -342,10 +359,12 @@ function createCard(name, color){
 }
 
 function toggleCardAction(card, con){
+	if(!card) return;
+	card.mouseEnabled = true;
 	if(con){
 		card.cursor = 'pointer';
 	}else{
-		card.cursor = null;
+		card.cursor = 'default';
 	}
 }
 
@@ -353,10 +372,15 @@ function highlightCard(card, con){
 	if(!card) return;
 	if(con){
 		if(card.highlight){
-			card.highlight.x = card.x;
-			card.highlight.y = card.y;
+			card.highlight.x = (card.oriX !== undefined && typeof card.oriX === 'number') ? card.oriX : card.x;
+			card.highlight.y = (card.oriY !== undefined && typeof card.oriY === 'number') ? card.oriY : card.y;
 			card.highlight.rotation = card.rotation;
+			card.highlight.scaleX = card.scaleX || 1;
+			card.highlight.scaleY = card.scaleY || 1;
 			card.highlight.visible = true;
+			if(cardsPlayContainer && typeof cardsPlayContainer.contains === 'function' && cardsPlayContainer.contains(card.highlight)){
+				cardsPlayContainer.setChildIndex(card.highlight, cardsPlayContainer.numChildren - 1);
+			}
 			animateBlink(card.highlight);
 		}
 	}else{

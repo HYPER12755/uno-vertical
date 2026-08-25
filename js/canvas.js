@@ -237,8 +237,10 @@ function buildGameCanvas() {
 
   // Color Sprites & Selector
   var _frame = { regX: 50, regY: 50, height: 100, width: 100, count: 9 };
+  var itemColorsRes = loader.getResult('itemColors');
+  var itemColorsImg = (itemColorsRes && itemColorsRes.src) ? itemColorsRes.src : itemColorsRes;
   colorSpriteData = new createjs.SpriteSheet({
-    images: [loader.getResult('itemColors').src],
+    images: [itemColorsImg],
     frames: _frame,
     animations: { animate: { frames: [0, 1, 2, 3], speed: 1 } }
   });

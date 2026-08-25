@@ -103,7 +103,6 @@ export class MultiplayerUIManager {
     }
     this.rootEl = layer;
     this.renderTopBar();
-    this.checkUrlForRoomInvite();
   }
 
   public showToast(message: string, icon: string = '✨') {
@@ -1132,7 +1131,7 @@ export class MultiplayerUIManager {
   }
 
   // --- URL INVITE CHECK ---
-  private checkUrlForRoomInvite() {
+  public checkUrlForRoomInvite() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const roomCode = urlParams.get('room');

@@ -185,31 +185,31 @@
 	}
 	
 	if(soundOn){
-		manifest.push({src:'assets/sounds/sound_click.mp3', id:'soundButton'});
-		manifest.push({src:'assets/sounds/sound_card_deal.mp3', id:'soundCardDeal'});
-		manifest.push({src:'assets/sounds/sound_card_flip.mp3', id:'soundCardFlip'});
-		manifest.push({src:'assets/sounds/sound_card_draw.mp3', id:'soundCardDraw'});
-		manifest.push({src:'assets/sounds/sound_card_shuffle.mp3', id:'soundCardShuffle'});
-		manifest.push({src:'assets/sounds/sound_point.mp3', id:'soundPoint'});
-		manifest.push({src:'assets/sounds/sound_round.mp3', id:'soundRound'});
-		manifest.push({src:'assets/sounds/sound_winner.mp3', id:'soundWinner'});
-		manifest.push({src:'assets/sounds/sound_result.mp3', id:'soundResult'});
-		manifest.push({src:'assets/sounds/sound_warning.mp3', id:'soundWarning'});
-		manifest.push({src:'assets/sounds/sound_alert.mp3', id:'soundAlert'});
-		manifest.push({src:'assets/sounds/sound_action.mp3', id:'soundAction'});
-		manifest.push({src:'assets/sounds/sound_color.mp3', id:'soundColor'});
-		manifest.push({src:'assets/sounds/sound_color_pick.mp3', id:'soundColorPick'});
-		manifest.push({src:'assets/sounds/sound_call.mp3', id:'soundCall'});
-		manifest.push({src:'assets/sounds/sound_target.mp3', id:'soundTarget'});
-		manifest.push({src:'assets/sounds/sound_freeze.mp3', id:'soundFreeze'});
-		manifest.push({src:'assets/sounds/sound_eliminated.mp3', id:'soundEliminated'});
-		manifest.push({src:'assets/sounds/sound_direction.mp3', id:'soundDirection'});
-		manifest.push({src:'assets/sounds/sound_direction_reverse.mp3', id:'soundDirectionReverse'});
-		manifest.push({src:'assets/sounds/music_game.mp3', id:'musicGame'});
+		// manifest.push({src:'assets/sounds/sound_click.mp3', id:'soundButton'});
+		// manifest.push({src:'assets/sounds/sound_card_deal.mp3', id:'soundCardDeal'});
+		// manifest.push({src:'assets/sounds/sound_card_flip.mp3', id:'soundCardFlip'});
+		// manifest.push({src:'assets/sounds/sound_card_draw.mp3', id:'soundCardDraw'});
+		// manifest.push({src:'assets/sounds/sound_card_shuffle.mp3', id:'soundCardShuffle'});
+		// manifest.push({src:'assets/sounds/sound_point.mp3', id:'soundPoint'});
+		// manifest.push({src:'assets/sounds/sound_round.mp3', id:'soundRound'});
+		// manifest.push({src:'assets/sounds/sound_winner.mp3', id:'soundWinner'});
+		// manifest.push({src:'assets/sounds/sound_result.mp3', id:'soundResult'});
+		// manifest.push({src:'assets/sounds/sound_warning.mp3', id:'soundWarning'});
+		// manifest.push({src:'assets/sounds/sound_alert.mp3', id:'soundAlert'});
+		// manifest.push({src:'assets/sounds/sound_action.mp3', id:'soundAction'});
+		// manifest.push({src:'assets/sounds/sound_color.mp3', id:'soundColor'});
+		// manifest.push({src:'assets/sounds/sound_color_pick.mp3', id:'soundColorPick'});
+		// manifest.push({src:'assets/sounds/sound_call.mp3', id:'soundCall'});
+		// manifest.push({src:'assets/sounds/sound_target.mp3', id:'soundTarget'});
+		// manifest.push({src:'assets/sounds/sound_freeze.mp3', id:'soundFreeze'});
+		// manifest.push({src:'assets/sounds/sound_eliminated.mp3', id:'soundEliminated'});
+		// manifest.push({src:'assets/sounds/sound_direction.mp3', id:'soundDirection'});
+		// manifest.push({src:'assets/sounds/sound_direction_reverse.mp3', id:'soundDirectionReverse'});
+		// manifest.push({src:'assets/sounds/music_game.mp3', id:'musicGame'});
 		// manifest.push({src:'assets/sounds/music_main.mp3', id:'musicMain'});
 		
 		// createjs.Sound.alternateExtensions = ["mp3"];
-		loader.installPlugin(createjs.Sound);
+		// loader.installPlugin(createjs.Sound);
 	}
 
 	manifest = manifest.filter(function(item){
@@ -229,8 +229,10 @@
  * 
  */
 function fileComplete(evt) {
-	var item = evt.item;
-	console.log("Event Callback file loaded ", evt.item.id);
+	var item = evt ? (evt.item || (evt.target && evt.target.getItem ? evt.target.getItem() : null)) : null;
+	if (item && item.id) {
+		console.log("Event Callback file loaded ", item.id);
+	}
 }
 
 /*!
@@ -239,7 +241,9 @@ function fileComplete(evt) {
  * 
  */
 function handleFileError(evt) {
-	console.log("error", evt.item ? evt.item.src : "unknown file");
+	var item = evt ? (evt.item || (evt.target && evt.target.getItem ? evt.target.getItem() : null)) : null;
+	var src = item ? (item.src || item.id) : (evt && evt.src ? evt.src : "unknown file");
+	console.log("error", src);
 }
 
 /*!
