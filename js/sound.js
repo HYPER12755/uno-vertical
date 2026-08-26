@@ -1,6 +1,6 @@
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 // SOUND
-////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 var enableDesktopSound = true; //sound for dekstop
 var enableMobileSound = true; //sound for mobile and tablet
 
@@ -16,8 +16,25 @@ var musicPushArr = [];
 
 var lastSoundPlayTimes = {};
 
+var soundAliases = {
+	'soundTurn': 'soundAlert',
+	'musicMain': 'musicGame'
+};
+
+function tryResumeAudioContext() {
+	try {
+		if (typeof createjs !== 'undefined' && createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) {
+			if (createjs.WebAudioPlugin.context.state === 'suspended' || createjs.WebAudioPlugin.context.state === 'interrupted') {
+				createjs.WebAudioPlugin.context.resume().catch(function(){});
+			}
+		}
+	} catch (e) {}
+}
+
 function playSound(soundName, vol){
-	if(soundOn && !soundMute){
+	tryResumeAudioContext();
+	soundName = soundAliases[soundName] || soundName;
+	if(soundOn && !soundMute && typeof createjs !== 'undefined' && createjs.Sound){
 		var now = Date.now();
 		if (lastSoundPlayTimes[soundName] && (now - lastSoundPlayTimes[soundName] < 45)) {
 			return; // Debounce rapid duplicated sound calls
@@ -29,40 +46,58 @@ function playSound(soundName, vol){
 		soundID++;
 
 		var defaultVol = vol == undefined ? 1 : vol;
-		$.sound[thisSoundID] = createjs.Sound.play(soundName);
-		if ($.sound[thisSoundID]) {
-			$.sound[thisSoundID].defaultVol = defaultVol;
-			setSoundVolume(thisSoundID);
-			
-			$.sound[thisSoundID].removeAllEventListeners();
-			$.sound[thisSoundID].addEventListener ("complete", function() {
-				var removeSoundIndex = soundPushArr.indexOf(thisSoundID);
-				if(removeSoundIndex != -1){
-					soundPushArr.splice(removeSoundIndex, 1);
-				}
-			});
+		try {
+			var instance = createjs.Sound.play(soundName);
+			if (instance) {
+				$.sound[thisSoundID] = instance;
+				$.sound[thisSoundID].defaultVol = defaultVol;
+				setSoundVolume(thisSoundID);
+				
+				$.sound[thisSoundID].removeAllEventListeners();
+				$.sound[thisSoundID].addEventListener ("complete", function() {
+					var removeSoundIndex = soundPushArr.indexOf(thisSoundID);
+					if(removeSoundIndex != -1){
+						soundPushArr.splice(removeSoundIndex, 1);
+					}
+					delete $.sound[thisSoundID];
+				});
+			}
+		} catch (e) {
+			console.warn("playSound error:", e);
 		}
 	}
 }
 
 function playSoundLoop(soundName){
-	if(soundOn){
+	tryResumeAudioContext();
+	soundName = soundAliases[soundName] || soundName;
+	if(soundOn && typeof createjs !== 'undefined' && createjs.Sound){
 		if($.sound[soundName]==null){
 			soundLoopPushArr.push(soundName);
 
-			$.sound[soundName] = createjs.Sound.play(soundName);
-			$.sound[soundName].defaultVol = 1;
-			setSoundLoopVolume(soundName);
+			try {
+				var instance = createjs.Sound.play(soundName);
+				if (instance) {
+					$.sound[soundName] = instance;
+					$.sound[soundName].defaultVol = 1;
+					setSoundLoopVolume(soundName);
 
-			$.sound[soundName].removeAllEventListeners();
-			$.sound[soundName].addEventListener ("complete", function() {
-				$.sound[soundName].play();
-			});
+					$.sound[soundName].removeAllEventListeners();
+					$.sound[soundName].addEventListener ("complete", function() {
+						if ($.sound[soundName]) {
+							$.sound[soundName].play();
+						}
+					});
+				}
+			} catch (e) {
+				console.warn("playSoundLoop error:", e);
+			}
 		}
 	}
 }
 
 function toggleSoundLoop(soundName, con){
+	soundName = soundAliases[soundName] || soundName;
 	if(soundOn){
 		if($.sound[soundName]!=null){
 			if(con){
@@ -75,6 +110,7 @@ function toggleSoundLoop(soundName, con){
 }
 
 function stopSoundLoop(soundName){
+	soundName = soundAliases[soundName] || soundName;
 	if(soundOn){
 		if($.sound[soundName]!=null){
 			$.sound[soundName].stop();
@@ -89,23 +125,35 @@ function stopSoundLoop(soundName){
 }
 
 function playMusicLoop(soundName){
-	if(soundOn){
+	tryResumeAudioContext();
+	soundName = soundAliases[soundName] || soundName;
+	if(soundOn && typeof createjs !== 'undefined' && createjs.Sound){
 		if($.sound[soundName]==null){
 			musicPushArr.push(soundName);
 
-			$.sound[soundName] = createjs.Sound.play(soundName);
-			$.sound[soundName].defaultVol = 1;
-			setMusicVolume(soundName);
+			try {
+				var instance = createjs.Sound.play(soundName);
+				if (instance) {
+					$.sound[soundName] = instance;
+					$.sound[soundName].defaultVol = 1;
+					setMusicVolume(soundName);
 
-			$.sound[soundName].removeAllEventListeners();
-			$.sound[soundName].addEventListener ("complete", function() {
-				$.sound[soundName].play();
-			});
+					$.sound[soundName].removeAllEventListeners();
+					$.sound[soundName].addEventListener ("complete", function() {
+						if ($.sound[soundName]) {
+							$.sound[soundName].play();
+						}
+					});
+				}
+			} catch (e) {
+				console.warn("playMusicLoop error:", e);
+			}
 		}
 	}
 }
 
 function toggleMusicLoop(soundName, con){
+	soundName = soundAliases[soundName] || soundName;
 	if(soundOn){
 		if($.sound[soundName]!=null){
 			if(con){
@@ -118,6 +166,7 @@ function toggleMusicLoop(soundName, con){
 }
 
 function stopMusicLoop(soundName){
+	soundName = soundAliases[soundName] || soundName;
 	if(soundOn){
 		if($.sound[soundName]!=null){
 			$.sound[soundName].stop();
@@ -132,7 +181,9 @@ function stopMusicLoop(soundName){
 }
 
 function stopSound(){
-	createjs.Sound.stop();
+	if (typeof createjs !== 'undefined' && createjs.Sound) {
+		createjs.Sound.stop();
+	}
 }
 
 function toggleSoundInMute(con){
@@ -160,7 +211,7 @@ function toggleMusicInMute(con){
 function setSoundVolume(id, vol){
 	if(soundOn){
 		var soundIndex = soundPushArr.indexOf(id);
-		if(soundIndex != -1){
+		if(soundIndex != -1 && $.sound[soundPushArr[soundIndex]]){
 			var defaultVol = vol == undefined ? $.sound[soundPushArr[soundIndex]].defaultVol : vol;
 			var volume = soundMute == false ? defaultVol : 0;
 			$.sound[soundPushArr[soundIndex]].volume = volume;
@@ -172,7 +223,7 @@ function setSoundVolume(id, vol){
 function setSoundLoopVolume(soundLoop, vol){
 	if(soundOn){
 		var soundLoopIndex = soundLoopPushArr.indexOf(soundLoop);
-		if(soundLoopIndex != -1){
+		if(soundLoopIndex != -1 && $.sound[soundLoopPushArr[soundLoopIndex]]){
 			var defaultVol = vol == undefined ? $.sound[soundLoopPushArr[soundLoopIndex]].defaultVol : vol;
 			var volume = soundMute == false ? defaultVol : 0;
 			$.sound[soundLoopPushArr[soundLoopIndex]].volume = volume;
@@ -184,7 +235,7 @@ function setSoundLoopVolume(soundLoop, vol){
 function setMusicVolume(soundLoop, vol){
 	if(soundOn){
 		var musicIndex = musicPushArr.indexOf(soundLoop);
-		if(musicIndex != -1){
+		if(musicIndex != -1 && $.sound[musicPushArr[musicIndex]]){
 			var defaultVol = vol == undefined ? $.sound[musicPushArr[musicIndex]].defaultVol : vol;
 			var volume = musicMute == false ? defaultVol : 0;
 			$.sound[musicPushArr[musicIndex]].volume = volume;
@@ -200,18 +251,22 @@ function setMusicVolume(soundLoop, vol){
  */
 var audioFile = null;
 function playAudio(audioName, callback){
-	if(soundOn){
+	tryResumeAudioContext();
+	audioName = soundAliases[audioName] || audioName;
+	if(soundOn && typeof createjs !== 'undefined' && createjs.Sound){
 		if(audioFile==null){
 			audioFile = createjs.Sound.play(audioName);
-			setAudioVolume();
+			if (audioFile) {
+				setAudioVolume();
 
-			audioFile.removeAllEventListeners();
-			audioFile.addEventListener ("complete", function(event) {
-				audioFile = null;
-				
-				if (typeof callback == "function")
-					callback();
-			});
+				audioFile.removeAllEventListeners();
+				audioFile.addEventListener ("complete", function(event) {
+					audioFile = null;
+					
+					if (typeof callback == "function")
+						callback();
+				});
+			}
 		}
 	}
 }

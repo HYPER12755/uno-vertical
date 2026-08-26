@@ -101,20 +101,32 @@ function toggleArrowTurn(){
  * 
  */
 function updateGame(){
-	if(!gameData.paused){
+	if(!gameData.paused && gameData.cards){
 		for(var n=0; n<gameData.cards.length; n++){
 			var thisCard = gameData.cards[n];
-			thisCard.highlight.x = thisCard.x;
-			thisCard.highlight.y = thisCard.y;
-			thisCard.highlight.rotation = thisCard.rotation;
-			thisCard.eliminated.x = thisCard.x;
-			thisCard.eliminated.y = thisCard.y;
-			thisCard.eliminated.rotation = thisCard.rotation;
-
-			thisCard.shadow.x = thisCard.x + gameSettings.cardShadowX;
-			thisCard.shadow.y = thisCard.y + gameSettings.cardShadowY;
-			thisCard.shadow.rotation = thisCard.rotation;
-			thisCard.shadow.visible = thisCard.visible;
+			if(!thisCard) continue;
+			if(thisCard.highlight){
+				thisCard.highlight.x = thisCard.x;
+				thisCard.highlight.y = thisCard.y;
+				thisCard.highlight.rotation = thisCard.rotation;
+				thisCard.highlight.scaleX = thisCard.scaleX;
+				thisCard.highlight.scaleY = thisCard.scaleY;
+			}
+			if(thisCard.eliminated){
+				thisCard.eliminated.x = thisCard.x;
+				thisCard.eliminated.y = thisCard.y;
+				thisCard.eliminated.rotation = thisCard.rotation;
+				thisCard.eliminated.scaleX = thisCard.scaleX;
+				thisCard.eliminated.scaleY = thisCard.scaleY;
+			}
+			if(thisCard.shadow){
+				thisCard.shadow.x = thisCard.x + (gameSettings.cardShadowX || 5);
+				thisCard.shadow.y = thisCard.y + (gameSettings.cardShadowY || 5);
+				thisCard.shadow.rotation = thisCard.rotation;
+				thisCard.shadow.scaleX = thisCard.scaleX;
+				thisCard.shadow.scaleY = thisCard.scaleY;
+				thisCard.shadow.visible = thisCard.visible;
+			}
 		}
 	}
 }

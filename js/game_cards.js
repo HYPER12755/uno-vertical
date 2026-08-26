@@ -378,8 +378,12 @@ function highlightCard(card, con){
 			card.highlight.scaleX = card.scaleX || 1;
 			card.highlight.scaleY = card.scaleY || 1;
 			card.highlight.visible = true;
-			if(cardsPlayContainer && typeof cardsPlayContainer.contains === 'function' && cardsPlayContainer.contains(card.highlight)){
-				cardsPlayContainer.setChildIndex(card.highlight, cardsPlayContainer.numChildren - 1);
+			if(cardsPlayContainer && typeof cardsPlayContainer.contains === 'function' && cardsPlayContainer.contains(card) && cardsPlayContainer.contains(card.highlight)){
+				var cIndex = cardsPlayContainer.getChildIndex(card);
+				var hIndex = cardsPlayContainer.getChildIndex(card.highlight);
+				if(hIndex < cIndex){
+					cardsPlayContainer.setChildIndex(card.highlight, cIndex);
+				}
 			}
 			animateBlink(card.highlight);
 		}

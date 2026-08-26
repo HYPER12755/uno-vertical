@@ -11,20 +11,20 @@
  */
  $(function() {
 	  var resumeAudioContext = function() {
-		// handler for fixing suspended audio context in Chrome
 		try {
-			if (createjs.WebAudioPlugin && createjs.WebAudioPlugin.context && createjs.WebAudioPlugin.context.state === "suspended") {
-				createjs.WebAudioPlugin.context.resume();
-				// Should only need to fire once
-				window.removeEventListener("click", resumeAudioContext);
+			if (typeof createjs !== 'undefined' && createjs.WebAudioPlugin && createjs.WebAudioPlugin.context) {
+				if (createjs.WebAudioPlugin.context.state === "suspended" || createjs.WebAudioPlugin.context.state === "interrupted") {
+					createjs.WebAudioPlugin.context.resume().catch(function(){});
+				}
 			}
 		} catch (e) {
-			// SoundJS context or web audio plugin may not exist
-			console.error("There was an error while trying to resume the SoundJS Web Audio context...");
-			console.error(e);
+			// Web audio context not initialized yet
 		}
 	};
 	window.addEventListener("click", resumeAudioContext);
+	window.addEventListener("touchstart", resumeAudioContext);
+	window.addEventListener("pointerdown", resumeAudioContext);
+	window.addEventListener("keydown", resumeAudioContext);
 	 
 	 // Check for running exported on file protocol
 	if (window.location.protocol.substr(0, 4) === "file"){
